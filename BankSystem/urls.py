@@ -15,7 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from BankManagement import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('init/', views.init)
 ]
