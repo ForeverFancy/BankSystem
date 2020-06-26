@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from BankManagement.models import *
+from rest_framework import viewsets
+from BankManagement.serializers import *
 
 # Create your views here.
 
@@ -41,3 +43,58 @@ def init(request):
     employee.save()
 
     return HttpResponse("Finish init.")
+
+
+class BankViewSet(viewsets.ModelViewSet):
+    queryset = Bank.objects.all()
+    serializer_class = BankSerializer
+
+
+class CheckAccountViewSet(viewsets.ModelViewSet):
+    queryset = CheckAccount.objects.all()
+    serializer_class = CheckAccountSerializer
+
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+
+
+class CustomerViewSet(viewsets.ModelViewSet):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+
+
+class CustomerToCAViewSet(viewsets.ModelViewSet):
+    queryset = CustomerToCA.objects.all()
+    serializer_class = CustomerToCASerializer
+
+
+class LoanViewSet(viewsets.ModelViewSet):
+    queryset = Loan.objects.all()
+    serializer_class = LoanSerializer
+
+
+class CustomerToLoanViewSet(viewsets.ModelViewSet):
+    queryset = CustomerToLoan.objects.all()
+    serializer_class = CustomerToLoanSerializer
+
+
+class SavingAccountViewSet(viewsets.ModelViewSet):
+    queryset = SavingAccount.objects.all()
+    serializer_class = SavingAccountSerializer
+
+
+class CustomerToSAViewSet(viewsets.ModelViewSet):
+    queryset = CustomerToSA.objects.all()
+    serializer_class = CustomerToSASerializer
+
+
+class LoanReleaseViewSet(viewsets.ModelViewSet):
+    queryset = LoanRelease.objects.all()
+    serializer_class = LoanReleaseSerializer
