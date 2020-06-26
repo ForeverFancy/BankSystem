@@ -4,13 +4,13 @@ from BankManagement.views import *
 
 
 router = routers.DefaultRouter()
-router.register(r'banks', BankViewSet)
+router.register(r'banks', BankViewSet, basename='Bank')
 router.register(r'checkaccounts', CheckAccountViewSet)
 router.register(r'departments', DepartmentViewSet)
 router.register(r'employees', EmployeeViewSet)
-router.register(r'customers', CustomerViewSet)
+router.register(r'customers', CustomerViewSet, basename='Customer')
 # router.register(r'customertoca', CustomerToCAViewSet)
-router.register(r'loans', LoanViewSet)
+router.register(r'loans', LoanViewSet, basename='Loan')
 # router.register(r'customertoloan', CustomerToLoanViewSet)
 router.register(r'savingaccounts', SavingAccountViewSet)
 # router.register(r'customertosa', CustomerToSAViewSet)
@@ -19,5 +19,5 @@ router.register(r'loanreleases', LoanReleaseViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    # path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]

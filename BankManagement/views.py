@@ -1,7 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from BankManagement.models import *
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from BankManagement.serializers import *
 
 # Create your views here.
@@ -45,7 +47,7 @@ def init(request):
     return HttpResponse("Finish init.")
 
 
-class BankViewSet(viewsets.ModelViewSet):
+class BankViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bank.objects.all()
     serializer_class = BankSerializer
 
@@ -55,19 +57,55 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
     serializer_class = CheckAccountSerializer
 
 
-class DepartmentViewSet(viewsets.ModelViewSet):
+class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
 
 
-class EmployeeViewSet(viewsets.ModelViewSet):
+class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
 
 
-class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
+class CustomerViewSet(viewsets.ViewSet):
+    '''
+    Viewset for customer
+    '''
+    def list(self, request):
+        queryset = Customer.objects.all()
+        serializer = CustomerSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request):
+        # Testdata: {"Customer_ID": 123456201001010000, "Customer_Name":"Cat", "Customer_Phone_Number": 12345678811, "Customer_Address": "R010", "Contact_Person_Name": "Cas", "Contact_Person_Phone_Number": 12345678810,"Contact_Person_Email": "cat@qq.com", "Contact_Person_Relationship": "Friends", "Employee_ID": 123456199801020001}
+        serializer = CustomerSerializer(data=request.data)
+
+        if serializer.is_valid():
+            Customer.objects.create(**serializer.validated_data)
+            return Response({
+                'status': 'Success',
+                'message': 'Create new Loan Successfully'}, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'status': 'Bad request',
+            'message': 'Invalid data',
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # TODO: filter all input query.
+    # @action(methods=['get'], url_path='name/(?P<name>\w+)', detail=False)
+    # def get_by_name(self, request, name):
+    #     print(name)
+    #     queryset = Customer.objects.all()
+    #     customer = get_object_or_404(queryset, Customer_Name=name)
+    #     serializer = CustomerSerializer(customer)
+    #     return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        print(request.data)
+        queryset = Customer.objects.all()
+        customer = get_object_or_404(queryset, pk=pk)
+        serializer = CustomerSerializer(customer)
+        return Response(serializer.data)
 
 
 class CustomerToCAViewSet(viewsets.ModelViewSet):
@@ -75,9 +113,30 @@ class CustomerToCAViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerToCASerializer
 
 
-class LoanViewSet(viewsets.ModelViewSet):
-    queryset = Loan.objects.all()
-    serializer_class = LoanSerializer
+class LoanViewSet(viewsets.ViewSet):
+    '''
+    Viewset for loan.
+    '''
+    def list(self, request):
+        queryset = Loan.objects.all()
+        serializer = LoanSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        # Testdata = {"Loan_ID": "L001", "Loan_Total": 100, "Loan_Status": "0", "Bank_Name":"HF001"}
+        serializer = LoanSerializer(data=request.data)
+
+        if serializer.is_valid():
+            Loan.objects.create(**serializer.validated_data)
+            return Response({
+                'status': 'Success',
+                'message': 'Create new Loan Successfully'},
+                status=status.HTTP_201_CREATED)
+        print(serializer.errors)
+        return Response({
+            'status': 'Bad request',
+            'message': 'Invalid data',
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomerToLoanViewSet(viewsets.ModelViewSet):

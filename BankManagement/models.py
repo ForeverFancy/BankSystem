@@ -86,7 +86,7 @@ class CustomerToCA(models.Model):
 class Loan(models.Model):
     Loan_ID = models.CharField('Loan_ID', max_length=MAX_CHAR_LEN, blank=False, primary_key=True)
     Loan_Total = models.FloatField('Loan_Total', blank=False)
-    Loan_Status = models.CharField('Loan_Status', max_length=1, default='0', blank=False)
+    Loan_Status = models.CharField('Loan_Status', max_length=1, default='0')
     
     Bank_Name = models.ForeignKey(Bank, on_delete=models.CASCADE)
 
