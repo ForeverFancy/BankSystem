@@ -13,7 +13,7 @@ router.register(r'customertoca', CustomerToCAViewSet)
 router.register(r'loans', LoanViewSet, basename='Loan')
 # router.register(r'customertoloan', CustomerToLoanViewSet)
 router.register(r'savingaccounts', SavingAccountViewSet, basename='SavingAccount')
-# router.register(r'customertosa', CustomerToSAViewSet)
+router.register(r'customertosa', CustomerToSAViewSet)
 router.register(r'loanreleases', LoanReleaseViewSet, basename='LoanRelease')
 
 
