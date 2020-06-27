@@ -1,10 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
+from django.db import IntegrityError
 from BankManagement.models import *
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from BankManagement.serializers import *
+import datetime
 
 # Create your views here.
 
@@ -53,8 +55,53 @@ class BankViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CheckAccountViewSet(viewsets.ModelViewSet):
-    queryset = CheckAccount.objects.all()
-    serializer_class = CheckAccountSerializer
+    '''
+    Viewset for check account
+    '''
+    def list(self, request):
+        queryset = CheckAccount.objects.all()
+        serializer = CheckAccountSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request):
+        checkaccount = request.data.copy()
+        checkaccount.pop('Customer_ID')
+        checkaccount['CAccount_Open_Date'] = datetime.datetime.now()
+        ca_serializer = CheckAccountSerializer(data=checkaccount)
+
+        if ca_serializer.is_valid():
+            queryset = Customer.objects.filter(pk=request.data.get('Customer_ID'))
+            if not queryset.exists():
+                return Response({
+                    'status': 'Failed',
+                    'message': 'Customer not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            CheckAccount.objects.create(**ca_serializer.validated_data)
+            
+            ca_to_customer = request.data.copy()
+            ca_to_customer.pop('CAccount_Balance')
+            ca_to_customer.pop('CAccount_Overdraft')
+            ca_to_customer['CAccount_Last_Access_Date'] = datetime.datetime.now()
+
+            ca_to_customer_serializer = CustomerToCASerializer(data=ca_to_customer)
+            if ca_to_customer_serializer.is_valid():
+                try:
+                    CustomerToCA.objects.create(**ca_to_customer_serializer.validated_data)
+                except IntegrityError as e:
+                    queryset = CheckAccount.objects.all()
+                    checkaccount = get_object_or_404(queryset, pk=request.data.get('CAccount_ID'))
+                    checkaccount.delete()
+                    return Response({
+                        'status': 'Bad request',
+                        'message': str(e),
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'status': 'Success',
+                    'message': 'Create new Check Account Successfully'}, status=status.HTTP_201_CREATED)
+
+        return Response({
+            'status': 'Bad request',
+            'message': 'Invalid data',
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -101,7 +148,6 @@ class CustomerViewSet(viewsets.ViewSet):
     #     return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-        print(request.data)
         queryset = Customer.objects.all()
         customer = get_object_or_404(queryset, pk=pk)
         serializer = CustomerSerializer(customer)
@@ -136,11 +182,8 @@ class CustomerViewSet(viewsets.ViewSet):
             'message': 'Update data Successfully'}, status=status.HTTP_200_OK)
     
     def destroy(self, request, pk=None):
-        print("Deleting...")
-        print(request.data)
         queryset = Customer.objects.all()
         customer = get_object_or_404(queryset, pk=pk)
-        print(customer)
         customer.delete()
         return Response({
             'status': 'Success',
@@ -184,8 +227,57 @@ class CustomerToLoanViewSet(viewsets.ModelViewSet):
 
 
 class SavingAccountViewSet(viewsets.ModelViewSet):
-    queryset = SavingAccount.objects.all()
-    serializer_class = SavingAccountSerializer
+    '''
+    Viewset for saving account
+    '''
+    def list(self, request):
+        queryset = SavingAccount.objects.all()
+        serializer = SavingAccountSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        savingaccount = request.data.copy()
+        savingaccount.pop('Customer_ID')
+        savingaccount['SAccount_Open_Date'] = datetime.datetime.now()
+        sa_serializer = SavingAccountSerializer(data=savingaccount)
+
+        if sa_serializer.is_valid():
+            queryset = Customer.objects.filter(
+                pk=request.data.get('Customer_ID'))
+            if not queryset.exists():
+                return Response({
+                    'status': 'Failed',
+                    'message': 'Customer not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            SavingAccount.objects.create(**sa_serializer.validated_data)
+
+            sa_to_customer = request.data.copy()
+            sa_to_customer.pop('SAccount_Balance')
+            sa_to_customer.pop('SAccount_Interest_Rate')
+            sa_to_customer.pop('SAccount_Currency_Type')
+            sa_to_customer['SAccount_Last_Access_Date'] = datetime.datetime.now()
+
+            sa_to_customer_serializer = CustomerToSASerializer(
+                data=sa_to_customer)
+            if sa_to_customer_serializer.is_valid():
+                try:
+                    CustomerToSA.objects.create(
+                    **sa_to_customer_serializer.validated_data)
+                except IntegrityError as e:
+                    queryset = SavingAccount.objects.all()
+                    savingaccount = get_object_or_404(queryset, pk=request.data.get('SAccount_ID'))
+                    savingaccount.delete()
+                    return Response({
+                        'status': 'Bad request',
+                        'message': str(e),
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'status': 'Success',
+                    'message': 'Create new Saving Account Successfully'}, status=status.HTTP_201_CREATED)
+                    
+        return Response({
+            'status': 'Bad request',
+            'message': 'Invalid data',
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomerToSAViewSet(viewsets.ModelViewSet):

@@ -69,7 +69,7 @@ class Customer(models.Model):
 
 
 class CustomerToCA(models.Model):
-    CAccount_Last_Access_Date = models.DateTimeField('CAccount_Last_Access_Date', auto_now=True, blank=False)
+    CAccount_Last_Access_Date = models.DateTimeField('CAccount_Last_Access_Date', auto_now=True)
 
     CAccount_ID = models.ForeignKey(CheckAccount, on_delete=models.CASCADE)
     Customer_ID = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -109,7 +109,6 @@ class SavingAccount(models.Model):
     SAccount_ID = models.CharField('SAccount_ID', primary_key=True, max_length=MAX_CHAR_LEN)
     SAccount_Balance = models.FloatField('SAccount_Balance', default=0.0, blank=False)
     SAccount_Open_Date = models.DateTimeField('SAccount_Open_Date', blank=False)
-    SAccount_Last_Access_Date = models.DateTimeField('SAccount_Last_Access_Date', auto_now=True, blank=False)
     SAccount_Interest_Rate = models.FloatField('SAccount_Interest_Rate', blank=False)
     SAccount_Currency_Type = models.CharField('SAccount_Currency_Type', max_length=MAX_CHAR_LEN, blank=False)
 
@@ -120,7 +119,7 @@ class SavingAccount(models.Model):
 
 
 class CustomerToSA(models.Model):
-    SAccount_Last_Access_Date = models.DateTimeField('SAccount_Last_Access_Date', auto_now=True, blank=False)
+    SAccount_Last_Access_Date = models.DateTimeField('SAccount_Last_Access_Date', auto_now=True)
 
     SAccount_ID = models.ForeignKey(SavingAccount, on_delete=models.CASCADE)
     Customer_ID = models.ForeignKey(Customer, on_delete=models.CASCADE)

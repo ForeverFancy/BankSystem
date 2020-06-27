@@ -59,7 +59,7 @@ class SavingAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavingAccount
         fields = ('SAccount_ID', 'SAccount_Balance', 'SAccount_Open_Date',
-                  'SAccount_Last_Access_Date', 'SAccount_Interest_Rate', 'SAccount_Currency_Type', 'SAccount_Open_Bank_Name')
+                'SAccount_Interest_Rate', 'SAccount_Currency_Type', 'SAccount_Open_Bank_Name')
 
 
 class CustomerToSASerializer(serializers.ModelSerializer):
