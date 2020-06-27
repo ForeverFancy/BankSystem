@@ -73,4 +73,4 @@ class LoanReleaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = LoanRelease
         fields = ('Loan_Release_ID', 'Loan_Release_Date',
-                  'Loan_Release_Amount')
+                  'Loan_Release_Amount', 'Loan_ID')

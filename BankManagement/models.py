@@ -134,7 +134,7 @@ class CustomerToSA(models.Model):
 
 
 class LoanRelease(models.Model):
-    Loan_Release_ID = models.CharField('Loan_Release_ID', max_length=MAX_CHAR_LEN, blank=False)
+    Loan_Release_ID = models.CharField('Loan_Release_ID', max_length=MAX_CHAR_LEN, primary_key=True)
     Loan_Release_Date = models.DateTimeField('Loan_Release_Date', blank=False)
     Loan_Release_Amount = models.FloatField('Loan_Release_Amount', blank=False)
 

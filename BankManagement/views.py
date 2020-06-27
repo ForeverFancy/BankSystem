@@ -65,7 +65,14 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
     
     def create(self, request):
         checkaccount = request.data.copy()
-        checkaccount.pop('Customer_ID')
+
+        try:
+            checkaccount.pop('Customer_ID')
+        except KeyError as e:
+            return Response({
+                'status': 'Failed',
+                'message': 'Customer_ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         checkaccount['CAccount_Open_Date'] = datetime.datetime.now()
         ca_serializer = CheckAccountSerializer(data=checkaccount)
 
@@ -74,12 +81,19 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
             if not queryset.exists():
                 return Response({
                     'status': 'Failed',
-                    'message': 'Customer not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                    'message': 'Customer not exist'}, status=status.HTTP_400_BAD_REQUEST)
             CheckAccount.objects.create(**ca_serializer.validated_data)
             
             ca_to_customer = request.data.copy()
-            ca_to_customer.pop('CAccount_Balance')
-            ca_to_customer.pop('CAccount_Overdraft')
+            
+            try:
+                ca_to_customer.pop('CAccount_Balance')
+                ca_to_customer.pop('CAccount_Overdraft')
+            except KeyError as e:
+                return Response({
+                    'status': 'Failed',
+                    'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
             ca_to_customer['CAccount_Last_Access_Date'] = datetime.datetime.now()
 
             ca_to_customer_serializer = CustomerToCASerializer(data=ca_to_customer)
@@ -115,11 +129,11 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
         if not queryset.exists():
             return Response({
                 'status': 'Failed',
-                'message': 'Check Account not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                'message': 'Check Account not exist'}, status=status.HTTP_400_BAD_REQUEST)
         if pk != request.data.get("CAccount_ID"):
             return Response({
                 'status': 'Failed',
-                'message': 'Could not change CAccount_ID'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                'message': 'Could not change CAccount_ID'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             queryset.update(
                 CAccount_ID=pk,
@@ -155,8 +169,6 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
             for obj in customer_to_ca:
                 obj.delete()
             checkaccount.delete()
-            # customer_to_ca.delete()
-            print(customer_to_ca)
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
@@ -221,15 +233,15 @@ class CustomerViewSet(viewsets.ViewSet):
         if not queryset.exists():
             return Response({
                 'status': 'Failed',
-                'message': 'Customer not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                'message': 'Customer not exist'}, status=status.HTTP_400_BAD_REQUEST)
         if pk != request.data.get("Customer_ID"):
             return Response({
                 'status': 'Failed',
-                'message': 'Could not change Customer_ID'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                'message': 'Could not change Customer_ID'}, status=status.HTTP_400_BAD_REQUEST)
         if not Employee.objects.filter(pk=request.data.get('Employee_ID')).exists():
             return Response({
                 'status': 'Failed',
-                'message': 'Employee_ID not found'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                'message': 'Employee_ID not found'}, status=status.HTTP_400_BAD_REQUEST)
         queryset.update(
             Customer_Name=request.data.get("Customer_Name"),
             Customer_Phone_Number=request.data.get("Customer_Phone_Number"),
@@ -269,22 +281,95 @@ class LoanViewSet(viewsets.ViewSet):
 
     def create(self, request):
         # Testdata = {"Loan_ID": "L001", "Loan_Total": 100, "Loan_Status": "0", "Bank_Name":"HF001"}
+        loan = request.data.copy()
+        try:
+            loan.pop('Customer_ID')
+        except KeyError as e:
+            return Response({
+                'status': 'Failed',
+                'message': 'Customer_ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = LoanSerializer(data=request.data)
 
         if serializer.is_valid():
+            queryset = Customer.objects.filter(pk=request.data.get('Customer_ID'))
+            if not queryset.exists():
+                return Response({
+                    'status': 'Failed',
+                    'message': 'Customer not exist'}, status=status.HTTP_400_BAD_REQUEST)
             Loan.objects.create(**serializer.validated_data)
+            
+            customer_to_loan = request.data.copy()
+            try:
+                customer_to_loan.pop('Loan_Total')
+                customer_to_loan.pop('Loan_Status')
+                customer_to_loan.pop('Bank_Name')
+            except KeyError as e:
+                return Response({
+                    'status': 'Failed',
+                    'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
+            customer_to_loan_serializer = CustomerToLoanSerializer(data=customer_to_loan)
+
+            if customer_to_loan_serializer.is_valid():
+                try:
+                    CustomerToLoan.objects.create(**customer_to_loan_serializer.validated_data)
+                except IntegrityError as e:
+                    queryset = Loan.objects.all()
+                    loan = get_object_or_404(queryset, pk=request.data.get('Loan_ID'))
+                    loan.delete()
+                    return Response({
+                        'status': 'Bad request',
+                        'message': str(e),
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
             return Response({
                 'status': 'Success',
                 'message': 'Create new Loan Successfully'},
                 status=status.HTTP_201_CREATED)
-        print(serializer.errors)
+
         return Response({
             'status': 'Bad request',
             'message': 'Invalid data',
         }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def update(self, request, pk=None):
+        return Response({
+            'status': 'Bad request',
+            'message': 'Loan is not allowed to modify',
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self, request, pk=None):
+        queryset = Loan.objects.all()
+        loan = get_object_or_404(queryset, pk=pk)
+        serializer = LoanSerializer(loan)
+        return Response(serializer.data)
+    
+    def destroy(self, request, pk=None):
+        queryset = Loan.objects.all()
+        loan = get_object_or_404(queryset, pk=pk)
+        queryset = CustomerToLoan.objects.all()
+        customer_to_loan = get_list_or_404(queryset, Loan_ID=pk)
+        if loan.Loan_Status == '1':
+            return Response({
+                'status': 'Bad request',
+                'message': 'A loan record in the issuing state is not allowed to be deleted',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            for obj in customer_to_loan:
+                obj.delete()
+            loan.delete()
+        except IntegrityError as e:
+            return Response({
+                'status': 'Bad request',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'status': 'Success',
+            'message': 'Delete Loan Successfully'}, status=status.HTTP_200_OK)
 
 
-class CustomerToLoanViewSet(viewsets.ViewSet):
+class CustomerToLoanViewSet(viewsets.ModelViewSet):
     queryset = CustomerToLoan.objects.all()
     serializer_class = CustomerToLoanSerializer
 
@@ -300,7 +385,14 @@ class SavingAccountViewSet(viewsets.ViewSet):
 
     def create(self, request):
         savingaccount = request.data.copy()
-        savingaccount.pop('Customer_ID')
+
+        try:
+            savingaccount.pop('Customer_ID')
+        except KeyError as e:
+            return Response({
+                'status': 'Failed',
+                'message': 'Customer_ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         savingaccount['SAccount_Open_Date'] = datetime.datetime.now()
         sa_serializer = SavingAccountSerializer(data=savingaccount)
 
@@ -314,9 +406,14 @@ class SavingAccountViewSet(viewsets.ViewSet):
             SavingAccount.objects.create(**sa_serializer.validated_data)
 
             sa_to_customer = request.data.copy()
-            sa_to_customer.pop('SAccount_Balance')
-            sa_to_customer.pop('SAccount_Interest_Rate')
-            sa_to_customer.pop('SAccount_Currency_Type')
+            try:
+                sa_to_customer.pop('SAccount_Balance')
+                sa_to_customer.pop('SAccount_Interest_Rate')
+                sa_to_customer.pop('SAccount_Currency_Type')
+            except KeyError as e:
+                return Response({
+                    'status': 'Failed',
+                    'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
             sa_to_customer['SAccount_Last_Access_Date'] = datetime.datetime.now()
 
             sa_to_customer_serializer = CustomerToSASerializer(
@@ -373,5 +470,82 @@ class CustomerToSAViewSet(viewsets.ModelViewSet):
 
 
 class LoanReleaseViewSet(viewsets.ViewSet):
-    queryset = LoanRelease.objects.all()
-    serializer_class = LoanReleaseSerializer
+    '''
+    Viewset for loan release
+    '''
+    def list(self, request):
+        queryset = LoanRelease.objects.all()
+        serializer = LoanReleaseSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request):
+        loan_id = request.data.get('Loan_ID')
+        loan = Loan.objects.filter(pk=request.data.get('Loan_ID'))
+        
+        if not loan.exists():
+            return Response({
+                'status': 'Failed',
+                'message': 'Loan not exist'}, status=status.HTTP_400_BAD_REQUEST)
+    
+        if loan.get().Loan_Status == '2':
+            return Response({
+                'status': 'Failed',
+                'message': 'Loan is finished'}, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = LoanRelease.objects.filter(Loan_ID=request.data.get('Loan_ID'))
+        loan_amount = sum([q.Loan_Release_Amount for q in queryset])
+
+        if float(loan_amount) + float(request.data.get('Loan_Release_Amount')) > float(loan.get().Loan_Total):
+            return Response({
+                'status': 'Failed',
+                'message': 'Loan release is more than total amount'}, status=status.HTTP_400_BAD_REQUEST)
+        newrequest = request.data.copy()
+        newrequest['Loan_Release_Date'] = datetime.datetime.now()
+        serializer = LoanReleaseSerializer(data=newrequest)
+
+        if serializer.is_valid():
+            LoanRelease.objects.create(**serializer.validated_data)
+            return Response({
+                'status': 'Success',
+                'message': 'Create new Loan Release Successfully'},
+                status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'status': 'Bad request',
+            'message': 'Invalid data',
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def retrieve(self, request, pk=None):
+        queryset = LoanRelease.objects.all()
+        loan = get_object_or_404(queryset, Loan_Release_ID=pk)
+        serializer = LoanReleaseSerializer(loan)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        return Response({
+            'status': 'Bad request',
+            'message': 'Loan Release is not allowed to modify',
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def destroy(self, request, pk=None):
+        queryset = LoanRelease.objects.all()
+        loan_release = get_object_or_404(queryset, pk=pk)
+        loan = loan_release.Loan_ID
+
+        if loan.Loan_Status == '1':
+            return Response({
+                'status': 'Bad request',
+                'message': 'A loan release record in the issuing state is not allowed to be deleted',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            loan_release.delete()
+        except IntegrityError as e:
+            return Response({
+                'status': 'Bad request',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'status': 'Success',
+            'message': 'Delete Loan Release Successfully'}, status=status.HTTP_200_OK)
