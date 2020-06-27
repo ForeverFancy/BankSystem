@@ -134,7 +134,17 @@ class CustomerViewSet(viewsets.ViewSet):
         return Response({
             'status': 'Success',
             'message': 'Update data Successfully'}, status=status.HTTP_200_OK)
-
+    
+    def destroy(self, request, pk=None):
+        print("Deleting...")
+        print(request.data)
+        queryset = Customer.objects.all()
+        customer = get_object_or_404(queryset, pk=pk)
+        print(customer)
+        customer.delete()
+        return Response({
+            'status': 'Success',
+            'message': 'Delete data Successfully'}, status=status.HTTP_200_OK)
 
 
 class CustomerToCAViewSet(viewsets.ModelViewSet):
