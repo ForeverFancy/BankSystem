@@ -84,7 +84,7 @@ class CustomerViewSet(viewsets.ViewSet):
             Customer.objects.create(**serializer.validated_data)
             return Response({
                 'status': 'Success',
-                'message': 'Create new Loan Successfully'}, status=status.HTTP_201_CREATED)
+                'message': 'Create new Customer Successfully'}, status=status.HTTP_201_CREATED)
         
         return Response({
             'status': 'Bad request',
@@ -106,6 +106,35 @@ class CustomerViewSet(viewsets.ViewSet):
         customer = get_object_or_404(queryset, pk=pk)
         serializer = CustomerSerializer(customer)
         return Response(serializer.data)
+    
+    def update(self, request, pk=None):
+        queryset = Customer.objects.filter(pk=pk)
+        if not queryset.exists():
+            return Response({
+                'status': 'Failed',
+                'message': 'Customer not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        if pk != request.data.get("Customer_ID"):
+            return Response({
+                'status': 'Failed',
+                'message': 'Could not change Customer_ID'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        if not Employee.objects.filter(pk=request.data.get('Employee_ID')).exists():
+            return Response({
+                'status': 'Failed',
+                'message': 'Employee_ID not found'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        queryset.update(
+            Customer_Name=request.data.get("Customer_Name"),
+            Customer_Phone_Number=request.data.get("Customer_Phone_Number"),
+            Customer_Address=request.data.get("Customer_Address"),
+            Contact_Person_Name=request.data.get("Contact_Person_Name"),
+            Contact_Person_Phone_Number=request.data.get("Contact_Person_Phone_Number"),
+            Contact_Person_Email=request.data.get("Contact_Person_Email"),
+            Contact_Person_Relationship=request.data.get("Contact_Person_Relationship"),
+            Employee_ID=request.data.get("Employee_ID")
+        )
+        return Response({
+            'status': 'Success',
+            'message': 'Update data Successfully'}, status=status.HTTP_200_OK)
+
 
 
 class CustomerToCAViewSet(viewsets.ModelViewSet):
