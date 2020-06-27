@@ -505,6 +505,12 @@ class LoanReleaseViewSet(viewsets.ViewSet):
 
         if serializer.is_valid():
             LoanRelease.objects.create(**serializer.validated_data)
+            queryset = Loan.objects.filter(pk=request.data.get('Loan_ID'))
+            if float(loan_amount) + float(request.data.get('Loan_Release_Amount')) == float(loan.get().Loan_Total):
+                queryset.update(Loan_Status='2')
+            else:
+                queryset.update(Loan_Status='1')
+            
             return Response({
                 'status': 'Success',
                 'message': 'Create new Loan Release Successfully'},
