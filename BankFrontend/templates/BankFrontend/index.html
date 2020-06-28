@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="refresh" content="0;url=dist/index.html">
+    <title>SB Admin</title>
+    <script language="javascript">
+        window.location.href = "dist/index.html"
+    </script>
+</head>
+
+<body>
+    Go to <a href="dist/index.html">/dist/index.html</a>
+</body>
+
+</html>
+
+<!-- <!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Shield UI and Django Integration</title>
+    <link id="themecss" rel="stylesheet" type="text/css"
+        href="//www.shieldui.com/shared/components/latest/css/light/all.min.css" />
+    <script type="text/javascript" src="//www.shieldui.com/shared/components/latest/js/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="//www.shieldui.com/shared/components/latest/js/shieldui-all.min.js"></script>
+</head>
+
+<body>
+    <h1>Shield UI Grid Example</h1>
+    <div id="grid" style="max-width:800px; margin:auto; margin-top:40px;"></div>
+    <script type="text/javascript">
+        jQuery(function ($) {
+            $("#grid").shieldGrid({
+                dataSource: {
+                    // events: {
+                    //     error: function (event) {
+                    //         if (event.errorType == "transport") {
+                    //             // transport error is an ajax error; event holds the xhr object
+                    //             alert("transport error: " + event.error.statusText);
+
+                    //             // reload the data source if the operation that failed was save
+                    //             if (event.operation == "save") {
+                    //                 this.read();
+                    //             }
+                    //         }
+                    //         else {
+                    //             // other data source error - validation, etc
+                    //             alert(event.errorType + " error: " + event.error);
+                    //         }
+                    //     }
+                    // },
+                    remote: {
+                        read: {
+                            type: "GET",
+                            url: "/api/banks",
+                            dataType: "json"
+                        },
+                        modify: {
+                            create: function (items, success, error) {
+                                var newItem = items[0];
+                                $.ajax({
+                                    type: "POST",
+                                    url: "/books/api/catalog/",
+                                    dataType: "json",
+                                    contentType: "application/json",
+                                    data: JSON.stringify(newItem.data),
+                                    complete: function (xhr) {
+                                        if (xhr.readyState == 4) {
+                                            if (xhr.status == 201) {
+                                                newItem.data.id = +xhr.responseJSON.id
+                                                success();
+                                                return;
+                                            }
+                                        }
+                                        error(xhr);
+                                    }
+                                });
+                            },
+                            update: function (items, success, error) {
+                                $.ajax({
+                                    type: "PUT",
+                                    url: "/books/api/catalog/" + items[0].data.id + '/',
+                                    dataType: "json",
+                                    contentType: "application/json",
+                                    data: JSON.stringify(items[0].data)
+                                }).then(success, error);
+                            },
+                            remove: function (items, success, error) {
+                                $.ajax({
+                                    type: "DELETE",
+                                    url: "/books/api/catalog/" + items[0].data.id + '/'
+                                }).then(success, error);
+                            }
+                        }
+                    },
+                    schema: {
+                        fields: {
+                            Asset: { path: "Asset", type: Number },
+                            Bank_Name: { path: "Bank_Name", type: String },
+                            City: { path: "City", type: String }
+                        }
+                    }
+                },
+                sorting: true,
+                rowHover: false,
+                columns: [
+                    { field: "Bank_Name", title: "Book Name" },
+                    { field: "City", title: "City" },
+                    { field: "Asset", title: "Asset" },
+                    {
+                        width: 160,
+                        title: " ",
+                        buttons: [
+                            { commandName: "edit", caption: "Edit" },
+                            { commandName: "delete", caption: "Delete" }
+                        ]
+                    }
+                ],
+                toolbar: [
+                    {
+                        buttons: [
+                            { commandName: "insert", caption: "Add Book" }
+                        ],
+                        position: "top"
+                    }
+                ],
+                paging: {
+                    pageSize: 10
+                },
+                editing: {
+                    enabled: true,
+                    type: "row"
+                }
+            });
+        });
+    </script>
+</body>
+
+</html> -->
