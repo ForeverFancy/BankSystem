@@ -19,4 +19,27 @@
         e.preventDefault();
         $("body").toggleClass("sb-sidenav-toggled");
     });
+
+    $(document).ready(function () {
+        $.ajax({
+            'url': '/api/checkaccounts/',
+            'dataType': "json",
+            'type': "GET",
+        }).done(function (data) {
+            console.log(JSON.parse(JSON.stringify(data)));
+            $('#myTable').dataTable({
+                "aaData": data,
+                "columns": [
+
+                    { "data": "CAccount_ID" },
+                    { "data": "CAccount_Balance" },
+                    { "data": "CAccount_Open_Date" },
+                    { "data": "CAccount_Overdraft" },
+                    { "data": "CAccount_Open_Bank_Name"}
+
+                ]
+            })
+        })
+    })
+
 })(jQuery);

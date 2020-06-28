@@ -19,4 +19,25 @@
         e.preventDefault();
         $("body").toggleClass("sb-sidenav-toggled");
     });
+
+    $(document).ready(function () {
+        $.ajax({
+            'url': '/api/banks/',
+            'dataType': "json",
+            'type': "GET",
+        }).done(function (data) {
+            console.log(JSON.parse(JSON.stringify(data)));
+            $('#myTable').dataTable({
+                "aaData": data,
+                "columns": [
+
+                    { "data": "City" },
+                    { "data": "Bank_Name" },
+                    { "data": "Asset" }
+
+                ]
+            })
+        })
+    })
+
 })(jQuery);

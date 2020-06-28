@@ -19,4 +19,26 @@
         e.preventDefault();
         $("body").toggleClass("sb-sidenav-toggled");
     });
+
+    $(document).ready(function () {
+        $.ajax({
+            'url': '/api/loans/',
+            'dataType': "json",
+            'type': "GET",
+        }).done(function (data) {
+            console.log(JSON.parse(JSON.stringify(data)));
+            $('#myTable').dataTable({
+                "aaData": data,
+                "columns": [
+
+                    { "data": "Loan_ID" },
+                    { "data": "Loan_Total" },
+                    { "data": "Loan_Status" },
+                    { "data": "Bank_Name"}
+
+                ]
+            })
+        })
+    })
+
 })(jQuery);

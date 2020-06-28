@@ -19,4 +19,28 @@
         e.preventDefault();
         $("body").toggleClass("sb-sidenav-toggled");
     });
+
+    $(document).ready(function () {
+        $.ajax({
+            'url': '/api/savingaccounts/',
+            'dataType': "json",
+            'type': "GET",
+        }).done(function (data) {
+            console.log(JSON.parse(JSON.stringify(data)));
+            $('#myTable').dataTable({
+                "aaData": data,
+                "columns": [
+
+                    { "data": "SAccount_ID" },
+                    { "data": "SAccount_Balance" },
+                    { "data": "SAccount_Open_Date" },
+                    { "data": "SAccount_Interest_Rate" },
+                    { "data": "SAccount_Currency_Type" },
+                    { "data": "SAccount_Open_Bank_Name" }
+
+                ]
+            })
+        })
+    })
+
 })(jQuery);
