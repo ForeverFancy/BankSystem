@@ -38,7 +38,7 @@ class Department(models.Model):
 
 
 class Employee(models.Model):
-    Employee_ID = models.DecimalField('Employee_ID', max_digits=18, decimal_places=0, blank=False, primary_key=True)
+    Employee_ID = models.CharField('Employee_ID', max_length=18, primary_key=True)
     Employee_Name = models.CharField('Employee_Name', max_length=MAX_CHAR_LEN, blank=False)
     Employee_Phone_Number = models.DecimalField('Employee_Phone_Number', max_digits=11, decimal_places=0, blank=False)
     Employee_Address = models.CharField('Employee_Address', max_length=MAX_CHAR_LEN, blank=False)

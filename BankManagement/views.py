@@ -6,6 +6,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from BankManagement.serializers import *
+from rest_framework.permissions import AllowAny
 import datetime
 
 # Create your views here.
@@ -50,6 +51,7 @@ def init(request):
 
 
 class BankViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (AllowAny,)
     queryset = Bank.objects.all()
     serializer_class = BankSerializer
 
@@ -58,6 +60,8 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
     '''
     Viewset for check account
     '''
+    permission_classes = (AllowAny,)
+
     def list(self, request):
         queryset = CheckAccount.objects.all()
         serializer = CheckAccountSerializer(queryset, many=True)
@@ -185,6 +189,7 @@ class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (AllowAny,)
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
 
@@ -193,6 +198,8 @@ class CustomerViewSet(viewsets.ViewSet):
     '''
     Viewset for customer
     '''
+    permission_classes = (AllowAny,)
+
     def list(self, request):
         queryset = Customer.objects.all()
         serializer = CustomerSerializer(queryset, many=True)
@@ -238,19 +245,19 @@ class CustomerViewSet(viewsets.ViewSet):
             return Response({
                 'status': 'Failed',
                 'message': 'Could not change Customer_ID'}, status=status.HTTP_400_BAD_REQUEST)
-        if not Employee.objects.filter(pk=request.data.get('Employee_ID')).exists():
+        if request.data.get('Employee_ID') and not Employee.objects.filter(pk=request.data.get('Employee_ID')).exists():
             return Response({
                 'status': 'Failed',
                 'message': 'Employee_ID not found'}, status=status.HTTP_400_BAD_REQUEST)
         queryset.update(
-            Customer_Name=request.data.get("Customer_Name"),
-            Customer_Phone_Number=request.data.get("Customer_Phone_Number"),
-            Customer_Address=request.data.get("Customer_Address"),
-            Contact_Person_Name=request.data.get("Contact_Person_Name"),
-            Contact_Person_Phone_Number=request.data.get("Contact_Person_Phone_Number"),
-            Contact_Person_Email=request.data.get("Contact_Person_Email"),
-            Contact_Person_Relationship=request.data.get("Contact_Person_Relationship"),
-            Employee_ID=request.data.get("Employee_ID")
+            Customer_Name=request.data.get("Customer_Name") if request.data.get("Customer_Name") else queryset[0].Customer_Name,
+            Customer_Phone_Number=request.data.get("Customer_Phone_Number") if request.data.get("Customer_Phone_Number") else queryset[0].Customer_Phone_Number,
+            Customer_Address=request.data.get("Customer_Address") if request.data.get("Customer_Address") else queryset[0].Customer_Address,
+            Contact_Person_Name=request.data.get("Contact_Person_Name") if request.data.get("Contact_Person_Name") else queryset[0].Contact_Person_Name,
+            Contact_Person_Phone_Number=request.data.get("Contact_Person_Phone_Number") if request.data.get("Contact_Person_Phone_Number") else queryset[0].Contact_Person_Phone_Number,
+            Contact_Person_Email=request.data.get("Contact_Person_Email") if request.data.get("Contact_Person_Email") else queryset[0].Contact_Person_Email,
+            Contact_Person_Relationship=request.data.get("Contact_Person_Relationship") if request.data.get("Contact_Person_Relationship") else queryset[0].Contact_Person_Relationship,
+            Employee_ID=request.data.get("Employee_ID") if request.data.get("Employee_ID") else queryset[0].Employee_ID
         )
         return Response({
             'status': 'Success',
@@ -274,6 +281,8 @@ class LoanViewSet(viewsets.ViewSet):
     '''
     Viewset for loan.
     '''
+    permission_classes = (AllowAny,)
+
     def list(self, request):
         queryset = Loan.objects.all()
         serializer = LoanSerializer(queryset, many=True)
@@ -378,6 +387,8 @@ class SavingAccountViewSet(viewsets.ViewSet):
     '''
     Viewset for saving account
     '''
+    permission_classes = (AllowAny,)
+
     def list(self, request):
         queryset = SavingAccount.objects.all()
         serializer = SavingAccountSerializer(queryset, many=True)
@@ -473,6 +484,8 @@ class LoanReleaseViewSet(viewsets.ViewSet):
     '''
     Viewset for loan release
     '''
+    permission_classes = (AllowAny,)
+    
     def list(self, request):
         queryset = LoanRelease.objects.all()
         serializer = LoanReleaseSerializer(queryset, many=True)

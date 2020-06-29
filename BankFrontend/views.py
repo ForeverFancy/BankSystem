@@ -40,3 +40,15 @@ def departments_index(request):
 
 def employees_index(request):
     return render(request, 'BankFrontend/dist/employees.html')
+
+
+def bad_request_index(request):
+    return render(request, 'BankFrontend/dist/400.html')
+
+
+def not_found_index(request):
+    return render(request, 'BankFrontend/dist/404.html')
+
+
+def internal_server_error_index(request):
+    return render(request, 'BankFrontend/dist/500.html')

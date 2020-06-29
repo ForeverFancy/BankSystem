@@ -12,5 +12,8 @@ urlpatterns = [
     path('dist/loans.html', views.loans_index),
     path('dist/savingaccounts.html', views.savingaccounts_index),
     path('dist/departments.html', views.departments_index),
-    path('dist/employees.html', views.employees_index)
+    path('dist/employees.html', views.employees_index),
+    path('dist/400.html', views.bad_request_index),
+    path('dist/404.html', views.not_found_index),
+    path('dist/500.html', views.internal_server_error_index)
 ]
