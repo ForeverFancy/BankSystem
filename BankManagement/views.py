@@ -141,8 +141,8 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
         try:
             queryset.update(
                 CAccount_ID=pk,
-                CAccount_Balance=request.data.get('CAccount_Balance'),
-                CAccount_Overdraft=request.data.get('CAccount_Overdraft'),
+                CAccount_Balance=request.data.get('CAccount_Balance') if request.data.get('CAccount_Balance') else queryset[0].CAccount_Balance,
+                CAccount_Overdraft=request.data.get('CAccount_Overdraft') if request.data.get('CAccount_Overdraft') else queryset[0].CAccount_Overdraft,
             )
         except IntegrityError as e:
             return Response({
@@ -455,6 +455,44 @@ class SavingAccountViewSet(viewsets.ViewSet):
         savingaccount = get_object_or_404(queryset, pk=pk)
         serializer = SavingAccountSerializer(savingaccount)
         return Response(serializer.data)
+    
+    def update(self, request, pk=None):
+        # Only balance and overdraft are allowed to modify
+        queryset = SavingAccount.objects.filter(pk=pk)
+        if not queryset.exists():
+            return Response({
+                'status': 'Failed',
+                'message': 'Check Account not exist'}, status=status.HTTP_400_BAD_REQUEST)
+        if pk != request.data.get("SAccount_ID"):
+            return Response({
+                'status': 'Failed',
+                'message': 'Could not change SAccount_ID'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            queryset.update(
+                SAccount_ID=pk,
+                SAccount_Balance=request.data.get('SAccount_Balance') if request.data.get('SAccount_Balance') else queryset[0].SAccount_Balance,
+                SAccount_Interest_Rate=request.data.get('SAccount_Interest_Rate') if request.data.get('SAccount_Interest_Rate') else queryset[0].SAccount_Interest_Rate,
+                SAccount_Currency_Type=request.data.get('SAccount_Currency_Type') if request.data.get('SAccount_Currency_Type') else queryset[0].SAccount_Currency_Type,
+            )
+        except IntegrityError as e:
+            return Response({
+                'status': 'Bad request',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        queryset = CustomerToSA.objects.filter(SAccount_ID=pk)
+        try:
+            queryset.update(
+                SAccount_Last_Access_Date=datetime.datetime.now()
+            )
+        except IntegrityError as e:
+            return Response({
+                'status': 'Bad request',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'status': 'Success',
+            'message': 'Update Check Account Successfully'}, status=status.HTTP_200_OK)
     
     def destroy(self, request, pk=None):
         queryset = SavingAccount.objects.all()

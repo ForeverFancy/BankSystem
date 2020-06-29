@@ -14,6 +14,13 @@
         crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js"
         crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script src="{% static 'dist/js/savingaccounts.js' %}"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
+    <script src="{% static 'dist/assets/demo/datatables-demo.js' %}"></script>
 </head>
 
 <body class="sb-nav-fixed">
@@ -90,6 +97,154 @@
                         <li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
                         <li class="breadcrumb-item active">SavingAccounts</li>
                     </ol>
+
+                    <class class="btn-group btn-group-lg" role="group" aria-label="Basic example" id="myBtnGroup">
+                        <!-- <label class="btn btn-secondary"> -->
+                        <!-- <input type="radio" id="myBtnNew"> New -->
+                        <!-- </label> -->
+                        <input class="btn btn-secondary" type="button" value="New" id="myBtnNew">
+                        <input class="btn btn-secondary" type="button" value="Edit" id="myBtnEdit">
+                        <input class="btn btn-secondary" type="button" value="Delete" id="myBtnDelete">
+                    </class>
+                    
+                    <div class="modal fade" id="myModalNew" role="dialog">
+                        <div class="modal-dialog">
+                    
+                            <!-- Modal content-->
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Add a new saving account</h4>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body" style="padding:40px 50px;">
+                                    <form role="form" id="savingaccountsFormNew">
+                                        <div class="form-group">
+                                            <label for="SAccount_ID"> SAccount_ID</label>
+                                            <input type="text" class="form-control" id="SAccount_ID">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Customer_ID"> Customer_ID</label>
+                                            <input type="text" class="form-control" id="Customer_ID">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Balance"> SAccount_Balance</label>
+                                            <input type="number" class="form-control" id="SAccount_Balance" step="any">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Open_Date"> SAccount_Open_Date</label>
+                                            <input type="datetime" class="form-control" id="SAccount_Open_Date">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Interest_Rate"> SAccount_Interest_Rate</label>
+                                            <input type="number" class="form-control" id="SAccount_Interest_Rate" step="any">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Currency_Type"> SAccount_Currency_Type</label>
+                                            <input type="number" class="form-control" id="SAccount_Currency_Type" step="any">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Open_Bank_Name"> SAccount_Open_Bank_Name</label>
+                                            <input type="text" class="form-control" id="SAccount_Open_Bank_Name">
+                                        </div>
+                    
+                                        <button type="submit" class="btn btn-success btn-block"><span
+                                                class="glyphicon glyphicon-off"></span> Submit</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-danger btn-default pull-left" data-dismiss="modal"><span
+                                            class="glyphicon glyphicon-remove"></span>
+                                        Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal fade" id="myModalEdit" role="dialog">
+                        <div class="modal-dialog">
+                    
+                            <!-- Modal content-->
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Edit a saving account's information</h4>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body" style="padding:40px 50px;">
+                                    <form role="form" id="savingaccountsFormEdit">
+                                        <div class="form-group">
+                                            <label for="SAccount_ID"> SAccount_ID</label>
+                                            <input type="text" class="form-control" id="SAccount_ID">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Customer_ID"> Customer_ID</label>
+                                            <input type="text" class="form-control" id="Customer_ID">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Balance"> SAccount_Balance</label>
+                                            <input type="number" class="form-control" id="SAccount_Balance" step="any">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Open_Date"> SAccount_Open_Date</label>
+                                            <input type="datetime" class="form-control" id="SAccount_Open_Date">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Interest_Rate"> SAccount_Interest_Rate</label>
+                                            <input type="number" class="form-control" id="SAccount_Interest_Rate" step="any">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Currency_Type"> SAccount_Currency_Type</label>
+                                            <input type="number" class="form-control" id="SAccount_Currency_Type" step="any">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="SAccount_Open_Bank_Name"> SAccount_Open_Bank_Name</label>
+                                            <input type="text" class="form-control" id="SAccount_Open_Bank_Name">
+                                        </div>
+                    
+                                        <button type="submit" class="btn btn-success btn-block"><span
+                                                class="glyphicon glyphicon-off"></span> Submit</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-danger btn-default pull-left" data-dismiss="modal"><span
+                                            class="glyphicon glyphicon-remove"></span>
+                                        Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal fade" id="myModalDelete" role="dialog">
+                        <div class="modal-dialog">
+                    
+                            <!-- Modal content-->
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Delete a saving account</h4>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body" style="padding:40px 50px;">
+                                    <form role="form" id="savingaccountsFormDelete">
+                                        <div class="form-group">
+                                            <label for="SAccount_ID"> SAccount_ID</label>
+                                            <input type="text" class="form-control" id="SAccount_ID">
+                                        </div>
+                    
+                                        <button type="submit" class="btn btn-success btn-block"><span
+                                                class="glyphicon glyphicon-off"></span> Submit</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-danger btn-default pull-left" data-dismiss="modal"><span
+                                            class="glyphicon glyphicon-remove"></span>
+                                        Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <br>
+                    <br>
+
                     <div class="card mb-4">
                         <div class="card-header">
                             <i class="fas fa-table mr-1"></i>
@@ -108,8 +263,8 @@
                                             <th>SAccount Open Bank Name</th>
                                         </tr>
                                     </thead>
-                                    
-                                    
+
+
                                 </table>
                             </div>
                         </div>
@@ -130,13 +285,139 @@
             </footer>
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"
-        crossorigin="anonymous"></script>
-    <script src="{% static 'dist/js/savingaccounts.js' %}"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
-    <script src="{% static 'dist/assets/demo/datatables-demo.js' %}"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#myBtnNew").on('click', function () {
+                console.log("hello new");
+                $("#myModalNew").modal();
+            });
+            $("#myBtnDelete").on('click', function () {
+                console.log("hello delete");
+                $("#myModalDelete").modal();
+            });
+            $("#myBtnEdit").on('click', function () {
+                console.log("hello edit");
+                $("#myModalEdit").modal();
+            });
+        });
+
+        $(document).ready(function () {
+            $("#savingaccountsFormNew").submit(function (event) {
+                // event.preventDefault();
+                var $inputs = $("#savingaccountsFormNew :input");
+                var values = {};
+                $inputs.each(function () {
+                    if (this.id === "") {
+                        return true;
+                    }
+                    if ($(this).val() === "") {
+                        console.log("none");
+                        return true;
+                    }
+                    values[this.id] = $(this).val();
+                    // console.log(this.id + ": " + $(this).val());
+                });
+                console.log(values);
+                $.ajax({
+                    url: "/api/savingaccounts/",
+                    method: "POST",
+                    data: values,
+                    success: function (response) {
+                        console.log("success");
+                    },
+                    error: function (response) {
+                        console.log("failed");
+                        console.log(response);
+                        if (response.status === 400) {
+                            window.location.replace("/dist/400.html");
+                        }
+                        else if (response.status === 404) {
+                            window.location.replace("/dist/404.html");
+                        }
+                        else {
+                            window.location.replace("/dist/500.html");
+                        }
+                    }
+                });
+            });
+
+            $("#savingaccountsFormEdit").submit(function (event) {
+                // event.preventDefault();
+                var $inputs = $("#savingaccountsFormEdit :input");
+                var values = {};
+                $inputs.each(function () {
+                    if (this.id === "") {
+                        return true;
+                    }
+                    if ($(this).val() === "") {
+                        console.log("none");
+                        return true;
+                    }
+                    values[this.id] = $(this).val();
+                    // console.log(this.id + ": " + $(this).val());
+                });
+                console.log(values);
+                $.ajax({
+                    url: "/api/savingaccounts/" + values["SAccount_ID"] + "/",
+                    method: "PUT",
+                    data: values,
+                    success: function (response) {
+                        console.log("success");
+                    },
+                    error: function (response) {
+                        console.log("failed");
+                        console.log(response);
+                        if (response.status === 400) {
+                            window.location.replace("/dist/400.html");
+                        }
+                        else if (response.status === 404) {
+                            window.location.replace("/dist/404.html");
+                        }
+                        else {
+                            window.location.replace("/dist/500.html");
+                        }
+                    }
+                });
+            });
+
+            $("#savingaccountsFormDelete").submit(function (event) {
+                // event.preventDefault();
+                var $inputs = $("#savingaccountsFormDelete :input");
+                var values = {};
+                $inputs.each(function () {
+                    if (this.id === "") {
+                        return true;
+                    }
+                    values[this.id] = $(this).val();
+                    // console.log(this.id + ": " + $(this).val());
+                });
+                console.log(values);
+                $.ajax({
+                    url: "/api/savingaccounts/" + values["SAccount_ID"] + "/",
+                    method: "DELETE",
+                    data: values,
+                    success: function (response) {
+                        console.log("success");
+                    },
+                    error: function (response) {
+                        console.log("failed");
+                        console.log(response);
+                        if (response.status === 400) {
+                            window.location.replace("/dist/400.html");
+                        }
+                        else if (response.status === 404) {
+                            window.location.replace("/dist/404.html");
+                        }
+                        else {
+                            window.location.replace("/dist/500.html");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+
 </body>
 
 </html>
