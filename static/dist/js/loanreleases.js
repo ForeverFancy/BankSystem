@@ -32,9 +32,9 @@
                 "columns": [
 
                     { "data": "Loan_Release_ID" },
-                    { "data": "Loan_ID" },
                     { "data": "Loan_Release_Date" },
-                    { "data": "Loan_Release_Amount" }
+                    { "data": "Loan_Release_Amount" },
+                    { "data": "Loan_ID" }
 
                 ]
             })

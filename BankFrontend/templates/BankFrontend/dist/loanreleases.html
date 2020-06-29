@@ -90,7 +90,92 @@
                         <li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
                         <li class="breadcrumb-item active">LoanReleases</li>
                     </ol>
+
+                    <!-- Trigger the modal with a button -->
+                    <class class="btn-group btn-group-lg" role="group" aria-label="Basic example" id="myBtnGroup">
+                        <!-- <label class="btn btn-secondary"> -->
+                        <!-- <input type="radio" id="myBtnNew"> New -->
+                        <!-- </label> -->
+                        <input class="btn btn-secondary" type="button" value="New" id="myBtnNew">
+                        <input class="btn btn-secondary" type="button" value="Delete" id="myBtnDelete">
+                    </class>
+
+                    <div class="modal fade" id="myModalNew" role="dialog">
+                        <div class="modal-dialog">
+
+                            <!-- Modal content-->
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Add a new check account</h4>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body" style="padding:40px 50px;">
+                                    <form role="form" id="loanreleasesFormNew">
+                                        <div class="form-group">
+                                            <label for="Loan_Release_ID"> Loan_Release_ID</label>
+                                            <input type="text" class="form-control" id="Loan_Release_ID">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Loan_Release_Date"> Loan_Release_Date</label>
+                                            <input type="datetime" class="form-control" id="Loan_Release_Date">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Loan_Release_Amount"> Loan_Release_Amount</label>
+                                            <input type="number" class="form-control" id="Loan_Release_Amount"
+                                                step="any">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Loan_ID"> Loan_ID</label>
+                                            <input type="text" class="form-control" id="Loan_ID">
+                                        </div>
+
+                                        <button type="submit" class="btn btn-success btn-block"><span
+                                                class="glyphicon glyphicon-off"></span> Submit</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-danger btn-default pull-left"
+                                        data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span>
+                                        Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="modal fade" id="myModalDelete" role="dialog">
+                        <div class="modal-dialog">
+
+                            <!-- Modal content-->
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Delete a check account</h4>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body" style="padding:40px 50px;">
+                                    <form role="form" id="loanreleasesFormDelete">
+                                        <div class="form-group">
+                                            <label for="Loan_Release_ID"> Loan_Release_ID</label>
+                                            <input type="text" class="form-control" id="Loan_Release_ID">
+                                        </div>
+
+                                        <button type="submit" class="btn btn-success btn-block"><span
+                                                class="glyphicon glyphicon-off"></span> Submit</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-danger btn-default pull-left"
+                                        data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span>
+                                        Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
+                    <br>
+                    <br>
+
                     <div class="card mb-4">
                         <div class="card-header">
                             <i class="fas fa-table mr-1"></i>
@@ -107,7 +192,7 @@
                                             <th>Loan ID</th>
                                         </tr>
                                     </thead>
-                                    
+
                                 </table>
                             </div>
                         </div>
@@ -135,6 +220,94 @@
     <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'dist/assets/demo/datatables-demo.js' %}"></script>
+    <script>
+        $(document).ready(function () {
+            $("#myBtnNew").on('click', function () {
+                console.log("hello new");
+                $("#myModalNew").modal();
+            });
+            $("#myBtnDelete").on('click', function () {
+                console.log("hello delete");
+                $("#myModalDelete").modal();
+            });
+        });
+
+        $(document).ready(function () {
+            $("#loanreleasesFormNew").submit(function (event) {
+                // event.preventDefault();
+                var $inputs = $("#loanreleasesFormNew :input");
+                var values = {};
+                $inputs.each(function () {
+                    if (this.id === "") {
+                        return true;
+                    }
+                    if ($(this).val() === "") {
+                        console.log("none");
+                        return true;
+                    }
+                    values[this.id] = $(this).val();
+                    // console.log(this.id + ": " + $(this).val());
+                });
+                console.log(values);
+                $.ajax({
+                    url: "/api/loanreleases/",
+                    method: "POST",
+                    data: values,
+                    success: function (response) {
+                        console.log("success");
+                    },
+                    error: function (response) {
+                        console.log("failed");
+                        console.log(response);
+                        if (response.status === 400) {
+                            window.location.replace("/dist/400.html");
+                        }
+                        else if (response.status === 404) {
+                            window.location.replace("/dist/404.html");
+                        }
+                        else {
+                            window.location.replace("/dist/500.html");
+                        }
+                    }
+                });
+            });
+
+            $("#loanreleasesFormDelete").submit(function (event) {
+                // event.preventDefault();
+                var $inputs = $("#loanreleasesFormDelete :input");
+                var values = {};
+                $inputs.each(function () {
+                    if (this.id === "") {
+                        return true;
+                    }
+                    values[this.id] = $(this).val();
+                    // console.log(this.id + ": " + $(this).val());
+                });
+                console.log(values);
+                $.ajax({
+                    url: "/api/loanreleases/" + values["Loan_Release_ID"] + "/",
+                    method: "DELETE",
+                    data: values,
+                    success: function (response) {
+                        console.log("success");
+                    },
+                    error: function (response) {
+                        console.log("failed");
+                        console.log(response);
+                        if (response.status === 400) {
+                            window.location.replace("/dist/400.html");
+                        }
+                        else if (response.status === 404) {
+                            window.location.replace("/dist/404.html");
+                        }
+                        else {
+                            window.location.replace("/dist/500.html");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

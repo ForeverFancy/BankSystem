@@ -184,6 +184,7 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
 
 
 class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (AllowAny,)
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
 
@@ -597,6 +598,17 @@ class LoanReleaseViewSet(viewsets.ViewSet):
         
         try:
             loan_release.delete()
+            queryset = LoanRelease.objects.filter(Loan_ID=loan)
+            if not queryset.exists():
+                queryset.update(Loan_Status='0')
+            else:
+                loan_amount = sum([q.Loan_Release_Amount for q in queryset])
+                if float(loan_amount) == float(loan.get().Loan_Total):
+                    queryset.update(Loan_Status='2')
+                elif float(loan_amount) == 0:
+                    queryset.update(Loan_Status='0')
+                else:
+                    queryset.update(Loan_Status='1')
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
