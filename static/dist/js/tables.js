@@ -42,15 +42,15 @@
             var bk_data = [];
             // console.log(data['month_data'][index]);
             for (const prop in data['year_data'][index]) {
-                bk_data.push({ Date: `${prop}`, Overall_Savings_Amount: `${data['year_data'][index][prop]}`, Overall_Loan_Amount: 0, Overall_Customer_Amount: 0 });
+                bk_data.push({ Date: `${prop}`, Overall_Savings_Amount: `${data['year_data'][index][prop][0]}`, Overall_Loan_Amount: `${data['year_data'][index][prop][1]}`, Overall_Customer_Amount: `${data['year_data'][index][prop][2]}` });
                 // console.log(`${prop}, ${data['month_data'][index][prop]}`);
             }
             for (const prop in data['quarter_data'][index]) {
-                bk_data.push({ Date: `${prop}`, Overall_Savings_Amount: `${data['quarter_data'][index][prop]}`, Overall_Loan_Amount: 0, Overall_Customer_Amount: 0 });
+                bk_data.push({ Date: `${prop}`, Overall_Savings_Amount: `${data['quarter_data'][index][prop][0]}`, Overall_Loan_Amount: `${data['quarter_data'][index][prop][1]}`, Overall_Customer_Amount: `${data['quarter_data'][index][prop][2]}` });
                 // console.log(`${prop}, ${data['month_data'][index][prop]}`);
             }
             for (const prop in data['month_data'][index]) {
-                bk_data.push({ Date: `${prop}`, Overall_Savings_Amount: `${data['month_data'][index][prop]}`, Overall_Loan_Amount: 0, Overall_Customer_Amount: 0});
+                bk_data.push({ Date: `${prop}`, Overall_Savings_Amount: `${data['month_data'][index][prop][0]}`, Overall_Loan_Amount: `${data['month_data'][index][prop][1]}`, Overall_Customer_Amount: `${data['month_data'][index][prop][2]}`});
                 // console.log(`${prop}, ${data['month_data'][index][prop]}`);
             }
             console.log(bk_data);
