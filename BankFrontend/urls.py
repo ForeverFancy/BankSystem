@@ -15,5 +15,7 @@ urlpatterns = [
     path('dist/employees.html', views.employees_index),
     path('dist/400.html', views.bad_request_index),
     path('dist/404.html', views.not_found_index),
-    path('dist/500.html', views.internal_server_error_index)
+    path('dist/500.html', views.internal_server_error_index),
+    path('dist/tables.html', views.tables_index),
+    path('dist/charts.html', views.charts_index),
 ]

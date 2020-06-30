@@ -52,3 +52,11 @@ def not_found_index(request):
 
 def internal_server_error_index(request):
     return render(request, 'BankFrontend/dist/500.html')
+
+
+def tables_index(request):
+    return render(request, 'BankFrontend/dist/tables.html')
+
+
+def charts_index(request):
+    return render(request, 'BankFrontend/dist/charts.html')
