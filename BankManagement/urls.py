@@ -15,6 +15,8 @@ router.register(r'customertoloan', CustomerToLoanViewSet)
 router.register(r'savingaccounts', SavingAccountViewSet, basename='SavingAccount')
 router.register(r'customertosa', CustomerToSAViewSet)
 router.register(r'loanreleases', LoanReleaseViewSet, basename='LoanRelease')
+router.register(r'statisticaldata', StatisticalDataViewSet,
+                basename='StatisticalData')
 
 
 urlpatterns = [

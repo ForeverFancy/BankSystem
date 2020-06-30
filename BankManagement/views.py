@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from BankManagement.serializers import *
 from rest_framework.permissions import AllowAny
 import datetime
+import json
 
 # Create your views here.
 
@@ -274,6 +275,7 @@ class CustomerViewSet(viewsets.ViewSet):
 
 
 class CustomerToCAViewSet(viewsets.ModelViewSet):
+    permission_classes = (AllowAny,)
     queryset = CustomerToCA.objects.all()
     serializer_class = CustomerToCASerializer
 
@@ -380,6 +382,7 @@ class LoanViewSet(viewsets.ViewSet):
 
 
 class CustomerToLoanViewSet(viewsets.ModelViewSet):
+    permission_classes = (AllowAny,)
     queryset = CustomerToLoan.objects.all()
     serializer_class = CustomerToLoanSerializer
 
@@ -515,6 +518,7 @@ class SavingAccountViewSet(viewsets.ViewSet):
 
 
 class CustomerToSAViewSet(viewsets.ModelViewSet):
+    permission_classes = (AllowAny,)
     queryset = CustomerToSA.objects.all()
     serializer_class = CustomerToSASerializer
 
@@ -618,3 +622,76 @@ class LoanReleaseViewSet(viewsets.ViewSet):
         return Response({
             'status': 'Success',
             'message': 'Delete Loan Release Successfully'}, status=status.HTTP_200_OK)
+
+
+class StatisticalDataViewSet(viewsets.ViewSet):
+    '''
+    Viewset for statistical data
+    '''
+    permission_classes = (AllowAny,)
+
+    def list(self, request):
+        bank_set = Bank.objects.all()
+        time_list = []
+        for bank in bank_set:
+            saving_account_set = SavingAccount.objects.filter(SAccount_Open_Bank_Name=bank.Bank_Name)
+            overall_balance = 0.00
+            for sa in saving_account_set:
+                print(sa.SAccount_Open_Date)
+                time_list.append(sa.SAccount_Open_Date)
+                overall_balance += sa.SAccount_Balance
+        start_time = min(time_list)
+        now_time = datetime.datetime.now()
+
+        # Process year
+        bank_year_data = []
+        bank_quarter_data = []
+        bank_month_data = []
+        quarter_range = [[1, 3], [4, 6], [7, 9], [10, 12]]
+        for year in range(start_time.year, now_time.year + 1):
+            for bank in bank_set:
+                saving_account_set = SavingAccount.objects.filter(
+                    SAccount_Open_Bank_Name=bank.Bank_Name)
+                overall_balance = 0.00
+                for sa in saving_account_set:
+                    if sa.SAccount_Open_Date.year <= year:
+                        overall_balance += sa.SAccount_Balance
+                bank_year_data.append({str(year): overall_balance})
+        print(bank_year_data)
+
+        # Process quarter
+        for bank in bank_set:
+            tmp = {}
+            for year in range(start_time.year, now_time.year + 1):
+                for quarter in range(1, 5):
+                    saving_account_set = SavingAccount.objects.filter(
+                        SAccount_Open_Bank_Name=bank.Bank_Name)
+                    overall_balance = 0.00
+                    for sa in saving_account_set:
+                        if sa.SAccount_Open_Date.year <= year and quarter_range[quarter-1][0] <= sa.SAccount_Open_Date.month <= quarter_range [quarter-1][1]:
+                            overall_balance += sa.SAccount_Balance
+                    tmp[str(year) + "-Q" + str(quarter)] = overall_balance
+            bank_quarter_data.append(tmp)
+        print(bank_quarter_data)
+
+        # Process month
+        for bank in bank_set:
+            tmp = {}
+            for year in range(start_time.year, now_time.year + 1):
+                for month in range(1, datetime.datetime.now().month + 1):
+                    saving_account_set = SavingAccount.objects.filter(
+                        SAccount_Open_Bank_Name=bank.Bank_Name)
+                    overall_balance = 0.00
+                    for sa in saving_account_set:
+                        if sa.SAccount_Open_Date.year <= year and sa.SAccount_Open_Date.month == month:
+                            overall_balance += sa.SAccount_Balance
+                    tmp[str(year) + "-M" + str(month)] = overall_balance
+            bank_month_data.append(tmp)
+        print(bank_month_data)
+
+        response_data = {}
+        response_data['year_data'] = bank_year_data
+        response_data['quarter_data'] = bank_quarter_data
+        response_data['month_data'] = bank_month_data
+
+        return Response(response_data)
