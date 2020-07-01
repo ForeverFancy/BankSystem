@@ -719,7 +719,7 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                                 overall_loan += release.Loan_Release_Amount
                     tmp[str(year) + "-M" + str(month)] = [overall_balance, overall_loan, overall_customer]
             bank_month_data.append(tmp)
-        print(bank_month_data)
+        # print(bank_month_data)
 
         response_data = {}
         response_data['year_data'] = bank_year_data
