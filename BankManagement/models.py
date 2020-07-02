@@ -72,7 +72,7 @@ class CustomerToCA(models.Model):
     CAccount_Last_Access_Date = models.DateTimeField('CAccount_Last_Access_Date', auto_now=True)
 
     CAccount_ID = models.ForeignKey(CheckAccount, on_delete=models.CASCADE)
-    Customer_ID = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    Customer_ID = models.ForeignKey(Customer, on_delete=models.PROTECT)
     CAccount_Open_Bank_Name = models.ForeignKey(Bank, on_delete=models.CASCADE)
 
     class Meta:
@@ -95,7 +95,7 @@ class Loan(models.Model):
 
 
 class CustomerToLoan(models.Model):
-    Customer_ID = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    Customer_ID = models.ForeignKey(Customer, on_delete=models.PROTECT)
     Loan_ID = models.ForeignKey(Loan, on_delete=models.CASCADE)
 
     class Meta:
@@ -122,7 +122,7 @@ class CustomerToSA(models.Model):
     SAccount_Last_Access_Date = models.DateTimeField('SAccount_Last_Access_Date', auto_now=True)
 
     SAccount_ID = models.ForeignKey(SavingAccount, on_delete=models.CASCADE)
-    Customer_ID = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    Customer_ID = models.ForeignKey(Customer, on_delete=models.PROTECT)
     SAccount_Open_Bank_Name = models.ForeignKey(Bank, on_delete=models.CASCADE)
 
     class Meta:

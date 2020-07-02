@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from django.http import HttpResponse
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
+from django.db.models import ProtectedError
 from BankManagement.models import *
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -68,59 +69,64 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
         serializer = CheckAccountSerializer(queryset, many=True)
         return Response(serializer.data)
     
+    @transaction.atomic
     def create(self, request):
         checkaccount = request.data.copy()
-
+        
         try:
             checkaccount.pop('Customer_ID')
         except KeyError as e:
             return Response({
                 'status': 'Failed',
                 'message': 'Customer_ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ca_to_customer = request.data.copy()
         
-        checkaccount['CAccount_Open_Date'] = datetime.datetime.now()
-        ca_serializer = CheckAccountSerializer(data=checkaccount)
+        try:
+            ca_to_customer.pop('CAccount_Balance')
+            ca_to_customer.pop('CAccount_Overdraft')
+        except KeyError as e:
+            return Response({
+                'status': 'Failed',
+                'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        queryset = Customer.objects.filter(pk=request.data.get('Customer_ID'))
+        if not queryset.exists():
+            return Response({
+                'status': 'Failed',
+                'message': 'Customer not exist'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with transaction.atomic():
+                checkaccount['CAccount_Open_Date'] = datetime.datetime.now()
+                ca_serializer = CheckAccountSerializer(data=checkaccount)
 
-        if ca_serializer.is_valid():
-            queryset = Customer.objects.filter(pk=request.data.get('Customer_ID'))
-            if not queryset.exists():
-                return Response({
-                    'status': 'Failed',
-                    'message': 'Customer not exist'}, status=status.HTTP_400_BAD_REQUEST)
-            CheckAccount.objects.create(**ca_serializer.validated_data)
-            
-            ca_to_customer = request.data.copy()
-            
-            try:
-                ca_to_customer.pop('CAccount_Balance')
-                ca_to_customer.pop('CAccount_Overdraft')
-            except KeyError as e:
-                return Response({
-                    'status': 'Failed',
-                    'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            ca_to_customer['CAccount_Last_Access_Date'] = datetime.datetime.now()
+                if ca_serializer.is_valid():
+                    CheckAccount.objects.create(**ca_serializer.validated_data)
 
-            ca_to_customer_serializer = CustomerToCASerializer(data=ca_to_customer)
-            if ca_to_customer_serializer.is_valid():
-                try:
-                    CustomerToCA.objects.create(**ca_to_customer_serializer.validated_data)
-                except IntegrityError as e:
-                    queryset = CheckAccount.objects.all()
-                    checkaccount = get_object_or_404(queryset, pk=request.data.get('CAccount_ID'))
-                    checkaccount.delete()
-                    return Response({
-                        'status': 'Bad request',
-                        'message': str(e),
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                return Response({
-                    'status': 'Success',
-                    'message': 'Create new Check Account Successfully'}, status=status.HTTP_201_CREATED)
+                    ca_to_customer['CAccount_Last_Access_Date'] = datetime.datetime.now()
+
+                    ca_to_customer_serializer = CustomerToCASerializer(data=ca_to_customer)
+                    if ca_to_customer_serializer.is_valid():
+                        CustomerToCA.objects.create(**ca_to_customer_serializer.validated_data)
+                        # except IntegrityError as e:
+                        #     queryset = CheckAccount.objects.all()
+                        #     checkaccount = get_object_or_404(queryset, pk=request.data.get('CAccount_ID'))
+                        #     checkaccount.delete()
+                        #     return Response({
+                        #         'status': 'Bad request',
+                        #         'message': str(e),
+                        #     }, status=status.HTTP_400_BAD_REQUEST)
+                        
+        except IntegrityError as e:
+            return Response({
+                'status': 'Bad request',
+                'message': str(e),
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({
-            'status': 'Bad request',
-            'message': 'Invalid data',
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'status': 'Success',
+            'message': 'Create new Check Account Successfully'}, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, pk=None):
         queryset = CheckAccount.objects.all()
@@ -128,6 +134,7 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
         serializer = CheckAccountSerializer(checkaccount)
         return Response(serializer.data)
 
+    @transaction.atomic
     def update(self, request, pk=None):
         # Only balance and overdraft are allowed to modify
         queryset = CheckAccount.objects.filter(pk=pk)
@@ -140,21 +147,16 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
                 'status': 'Failed',
                 'message': 'Could not change CAccount_ID'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            queryset.update(
-                CAccount_ID=pk,
-                CAccount_Balance=request.data.get('CAccount_Balance') if request.data.get('CAccount_Balance') else queryset[0].CAccount_Balance,
-                CAccount_Overdraft=request.data.get('CAccount_Overdraft') if request.data.get('CAccount_Overdraft') else queryset[0].CAccount_Overdraft,
-            )
-        except IntegrityError as e:
-            return Response({
-                'status': 'Bad request',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        queryset = CustomerToCA.objects.filter(CAccount_ID=pk)
-        try:
-            queryset.update(
-                CAccount_Last_Access_Date=datetime.datetime.now()
-            )
+            with transaction.atomic():
+                queryset.update(
+                    CAccount_ID=pk,
+                    CAccount_Balance=request.data.get('CAccount_Balance') if request.data.get('CAccount_Balance') else queryset[0].CAccount_Balance,
+                    CAccount_Overdraft=request.data.get('CAccount_Overdraft') if request.data.get('CAccount_Overdraft') else queryset[0].CAccount_Overdraft,
+                )
+                queryset = CustomerToCA.objects.filter(CAccount_ID=pk)
+                queryset.update(
+                    CAccount_Last_Access_Date=datetime.datetime.now()
+                )
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
@@ -165,20 +167,26 @@ class CheckAccountViewSet(viewsets.ModelViewSet):
             'status': 'Success',
             'message': 'Update Check Account Successfully'}, status=status.HTTP_200_OK)
 
+    @transaction.atomic
     def destroy(self, request, pk=None):
         queryset = CheckAccount.objects.all()
         checkaccount = get_object_or_404(queryset, pk=pk)
         queryset = CustomerToCA.objects.all()
         customer_to_ca = get_list_or_404(queryset, CAccount_ID=pk)
         try:
-            for obj in customer_to_ca:
-                obj.delete()
-            checkaccount.delete()
+            with transaction.atomic():
+                for obj in customer_to_ca:
+                    obj.delete()
+                checkaccount.delete()
+            return Response({
+            'status': 'Success',
+            'message': 'Delete Check Account Successfully'}, status=status.HTTP_200_OK)
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
                 'message': str(e),
             }, status=status.HTTP_400_BAD_REQUEST)
+        
         return Response({
             'status': 'Success',
             'message': 'Delete Check Account Successfully'}, status=status.HTTP_200_OK)
@@ -208,7 +216,6 @@ class CustomerViewSet(viewsets.ViewSet):
         return Response(serializer.data)
     
     def create(self, request):
-        # Testdata: {"Customer_ID": 123456201001010000, "Customer_Name":"Cat", "Customer_Phone_Number": 12345678811, "Customer_Address": "R010", "Contact_Person_Name": "Cas", "Contact_Person_Phone_Number": 12345678810,"Contact_Person_Email": "cat@qq.com", "Contact_Person_Relationship": "Friends", "Employee_ID": 123456199801020001}
         serializer = CustomerSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -221,15 +228,6 @@ class CustomerViewSet(viewsets.ViewSet):
             'status': 'Bad request',
             'message': 'Invalid data',
         }, status=status.HTTP_400_BAD_REQUEST)
-    
-    # TODO: filter all input query.
-    # @action(methods=['get'], url_path='name/(?P<name>\w+)', detail=False)
-    # def get_by_name(self, request, name):
-    #     print(name)
-    #     queryset = Customer.objects.all()
-    #     customer = get_object_or_404(queryset, Customer_Name=name)
-    #     serializer = CustomerSerializer(customer)
-    #     return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
         queryset = Customer.objects.all()
@@ -237,6 +235,7 @@ class CustomerViewSet(viewsets.ViewSet):
         serializer = CustomerSerializer(customer)
         return Response(serializer.data)
     
+    @transaction.atomic
     def update(self, request, pk=None):
         queryset = Customer.objects.filter(pk=pk)
         if not queryset.exists():
@@ -251,16 +250,17 @@ class CustomerViewSet(viewsets.ViewSet):
             return Response({
                 'status': 'Failed',
                 'message': 'Employee_ID not found'}, status=status.HTTP_400_BAD_REQUEST)
-        queryset.update(
-            Customer_Name=request.data.get("Customer_Name") if request.data.get("Customer_Name") else queryset[0].Customer_Name,
-            Customer_Phone_Number=request.data.get("Customer_Phone_Number") if request.data.get("Customer_Phone_Number") else queryset[0].Customer_Phone_Number,
-            Customer_Address=request.data.get("Customer_Address") if request.data.get("Customer_Address") else queryset[0].Customer_Address,
-            Contact_Person_Name=request.data.get("Contact_Person_Name") if request.data.get("Contact_Person_Name") else queryset[0].Contact_Person_Name,
-            Contact_Person_Phone_Number=request.data.get("Contact_Person_Phone_Number") if request.data.get("Contact_Person_Phone_Number") else queryset[0].Contact_Person_Phone_Number,
-            Contact_Person_Email=request.data.get("Contact_Person_Email") if request.data.get("Contact_Person_Email") else queryset[0].Contact_Person_Email,
-            Contact_Person_Relationship=request.data.get("Contact_Person_Relationship") if request.data.get("Contact_Person_Relationship") else queryset[0].Contact_Person_Relationship,
-            Employee_ID=request.data.get("Employee_ID") if request.data.get("Employee_ID") else queryset[0].Employee_ID
-        )
+        with transaction.atomic():
+            queryset.update(
+                Customer_Name=request.data.get("Customer_Name") if request.data.get("Customer_Name") else queryset[0].Customer_Name,
+                Customer_Phone_Number=request.data.get("Customer_Phone_Number") if request.data.get("Customer_Phone_Number") else queryset[0].Customer_Phone_Number,
+                Customer_Address=request.data.get("Customer_Address") if request.data.get("Customer_Address") else queryset[0].Customer_Address,
+                Contact_Person_Name=request.data.get("Contact_Person_Name") if request.data.get("Contact_Person_Name") else queryset[0].Contact_Person_Name,
+                Contact_Person_Phone_Number=request.data.get("Contact_Person_Phone_Number") if request.data.get("Contact_Person_Phone_Number") else queryset[0].    Contact_Person_Phone_Number,
+                Contact_Person_Email=request.data.get("Contact_Person_Email") if request.data.get("Contact_Person_Email") else queryset[0].Contact_Person_Email,
+                Contact_Person_Relationship=request.data.get("Contact_Person_Relationship") if request.data.get("Contact_Person_Relationship") else queryset[0].    Contact_Person_Relationship,
+                Employee_ID=request.data.get("Employee_ID") if request.data.get("Employee_ID") else queryset[0].Employee_ID
+            )
         return Response({
             'status': 'Success',
             'message': 'Update data Successfully'}, status=status.HTTP_200_OK)
@@ -268,7 +268,12 @@ class CustomerViewSet(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         queryset = Customer.objects.all()
         customer = get_object_or_404(queryset, pk=pk)
-        customer.delete()
+        try:
+            customer.delete()
+        except ProtectedError as e:
+            return Response({
+                'status': 'Failed',
+                'message': 'Could not delete'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({
             'status': 'Success',
             'message': 'Delete data Successfully'}, status=status.HTTP_200_OK)
@@ -291,8 +296,8 @@ class LoanViewSet(viewsets.ViewSet):
         serializer = LoanSerializer(queryset, many=True)
         return Response(serializer.data)
 
+    @transaction.atomic
     def create(self, request):
-        # Testdata = {"Loan_ID": "L001", "Loan_Total": 100, "Loan_Status": "0", "Bank_Name":"HF001"}
         loan = request.data.copy()
         try:
             loan.pop('Customer_ID')
@@ -300,48 +305,42 @@ class LoanViewSet(viewsets.ViewSet):
             return Response({
                 'status': 'Failed',
                 'message': 'Customer_ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        customer_to_loan = request.data.copy()
+        try:
+            customer_to_loan.pop('Loan_Total')
+            customer_to_loan.pop('Loan_Status')
+            customer_to_loan.pop('Bank_Name')
+        except KeyError as e:
+            return Response({
+                'status': 'Failed',
+                'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        queryset = Customer.objects.filter(pk=request.data.get('Customer_ID'))
+        if not queryset.exists():
+            return Response({
+                'status': 'Failed',
+                'message': 'Customer not exist'}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = LoanSerializer(data=request.data)
 
-        if serializer.is_valid():
-            queryset = Customer.objects.filter(pk=request.data.get('Customer_ID'))
-            if not queryset.exists():
-                return Response({
-                    'status': 'Failed',
-                    'message': 'Customer not exist'}, status=status.HTTP_400_BAD_REQUEST)
-            Loan.objects.create(**serializer.validated_data)
-            
-            customer_to_loan = request.data.copy()
-            try:
-                customer_to_loan.pop('Loan_Total')
-                customer_to_loan.pop('Loan_Status')
-                customer_to_loan.pop('Bank_Name')
-            except KeyError as e:
-                return Response({
-                    'status': 'Failed',
-                    'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
-            customer_to_loan_serializer = CustomerToLoanSerializer(data=customer_to_loan)
-
-            if customer_to_loan_serializer.is_valid():
-                try:
+        try:
+            with transaction.atomic():
+                if serializer.is_valid():
+                    Loan.objects.create(**serializer.validated_data)
+                    customer_to_loan_serializer = CustomerToLoanSerializer(data=customer_to_loan)
+                if customer_to_loan_serializer.is_valid():
                     CustomerToLoan.objects.create(**customer_to_loan_serializer.validated_data)
-                except IntegrityError as e:
-                    queryset = Loan.objects.all()
-                    loan = get_object_or_404(queryset, pk=request.data.get('Loan_ID'))
-                    loan.delete()
-                    return Response({
-                        'status': 'Bad request',
-                        'message': str(e),
-                    }, status=status.HTTP_400_BAD_REQUEST)
-            
+        except IntegrityError as e:
             return Response({
-                'status': 'Success',
-                'message': 'Create new Loan Successfully'},
-                status=status.HTTP_201_CREATED)
-
+                'status': 'Bad request',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
         return Response({
-            'status': 'Bad request',
-            'message': 'Invalid data',
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'status': 'Success',
+            'message': 'Create new Loan Successfully'},
+            status=status.HTTP_201_CREATED)
     
     def update(self, request, pk=None):
         return Response({
@@ -355,6 +354,7 @@ class LoanViewSet(viewsets.ViewSet):
         serializer = LoanSerializer(loan)
         return Response(serializer.data)
     
+    @transaction.atomic
     def destroy(self, request, pk=None):
         queryset = Loan.objects.all()
         loan = get_object_or_404(queryset, pk=pk)
@@ -367,9 +367,10 @@ class LoanViewSet(viewsets.ViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            for obj in customer_to_loan:
-                obj.delete()
-            loan.delete()
+            with transaction.atomic():
+                for obj in customer_to_loan:
+                    obj.delete()
+                loan.delete()
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
@@ -407,52 +408,46 @@ class SavingAccountViewSet(viewsets.ViewSet):
             return Response({
                 'status': 'Failed',
                 'message': 'Customer_ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            sa_to_customer = request.data.copy()
+            sa_to_customer.pop('SAccount_Balance')
+            sa_to_customer.pop('SAccount_Interest_Rate')
+            sa_to_customer.pop('SAccount_Currency_Type')
+        except KeyError as e:
+            return Response({
+                'status': 'Failed',
+                'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        queryset = Customer.objects.filter(
+            pk=request.data.get('Customer_ID'))
+        if not queryset.exists():
+            return Response({
+                'status': 'Failed',
+                'message': 'Customer not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         
         savingaccount['SAccount_Open_Date'] = datetime.datetime.now()
         sa_serializer = SavingAccountSerializer(data=savingaccount)
 
-        if sa_serializer.is_valid():
-            queryset = Customer.objects.filter(
-                pk=request.data.get('Customer_ID'))
-            if not queryset.exists():
-                return Response({
-                    'status': 'Failed',
-                    'message': 'Customer not exist'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-            SavingAccount.objects.create(**sa_serializer.validated_data)
+        try:
+            with transaction.atomic():
+                if sa_serializer.is_valid():
+                    SavingAccount.objects.create(**sa_serializer.validated_data)
+                    sa_to_customer['SAccount_Last_Access_Date'] = datetime.datetime.now()
 
-            sa_to_customer = request.data.copy()
-            try:
-                sa_to_customer.pop('SAccount_Balance')
-                sa_to_customer.pop('SAccount_Interest_Rate')
-                sa_to_customer.pop('SAccount_Currency_Type')
-            except KeyError as e:
-                return Response({
-                    'status': 'Failed',
-                    'message': 'More information is required'}, status=status.HTTP_400_BAD_REQUEST)
-            sa_to_customer['SAccount_Last_Access_Date'] = datetime.datetime.now()
-
-            sa_to_customer_serializer = CustomerToSASerializer(
-                data=sa_to_customer)
-            if sa_to_customer_serializer.is_valid():
-                try:
-                    CustomerToSA.objects.create(
-                    **sa_to_customer_serializer.validated_data)
-                except IntegrityError as e:
-                    queryset = SavingAccount.objects.all()
-                    savingaccount = get_object_or_404(queryset, pk=request.data.get('SAccount_ID'))
-                    savingaccount.delete()
-                    return Response({
-                        'status': 'Bad request',
-                        'message': str(e),
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                return Response({
-                    'status': 'Success',
-                    'message': 'Create new Saving Account Successfully'}, status=status.HTTP_201_CREATED)
-
+                    sa_to_customer_serializer = CustomerToSASerializer(
+                        data=sa_to_customer)
+                    if sa_to_customer_serializer.is_valid():
+                        CustomerToSA.objects.create(
+                        **sa_to_customer_serializer.validated_data)
+        except IntegrityError as e:
+            return Response({
+                'status': 'Bad request',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         return Response({
-            'status': 'Bad request',
-            'message': 'Invalid data',
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'status': 'Success',
+            'message': 'Create new Saving Account Successfully'}, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, pk=None):
         queryset = SavingAccount.objects.all()
@@ -460,6 +455,7 @@ class SavingAccountViewSet(viewsets.ViewSet):
         serializer = SavingAccountSerializer(savingaccount)
         return Response(serializer.data)
     
+    @transaction.atomic
     def update(self, request, pk=None):
         # Only balance and overdraft are allowed to modify
         queryset = SavingAccount.objects.filter(pk=pk)
@@ -472,22 +468,17 @@ class SavingAccountViewSet(viewsets.ViewSet):
                 'status': 'Failed',
                 'message': 'Could not change SAccount_ID'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            queryset.update(
-                SAccount_ID=pk,
-                SAccount_Balance=request.data.get('SAccount_Balance') if request.data.get('SAccount_Balance') else queryset[0].SAccount_Balance,
-                SAccount_Interest_Rate=request.data.get('SAccount_Interest_Rate') if request.data.get('SAccount_Interest_Rate') else queryset[0].SAccount_Interest_Rate,
-                SAccount_Currency_Type=request.data.get('SAccount_Currency_Type') if request.data.get('SAccount_Currency_Type') else queryset[0].SAccount_Currency_Type,
-            )
-        except IntegrityError as e:
-            return Response({
-                'status': 'Bad request',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        queryset = CustomerToSA.objects.filter(SAccount_ID=pk)
-        try:
-            queryset.update(
-                SAccount_Last_Access_Date=datetime.datetime.now()
-            )
+            with transaction.atomic():
+                queryset.update(
+                    SAccount_ID=pk,
+                    SAccount_Balance=request.data.get('SAccount_Balance') if request.data.get('SAccount_Balance') else queryset[0].SAccount_Balance,
+                    SAccount_Interest_Rate=request.data.get('SAccount_Interest_Rate') if request.data.get('SAccount_Interest_Rate') else queryset[0].SAccount_Interest_Rate,
+                    SAccount_Currency_Type=request.data.get('SAccount_Currency_Type') if request.data.get('SAccount_Currency_Type') else queryset[0].SAccount_Currency_Type,
+                )
+                queryset = CustomerToSA.objects.filter(SAccount_ID=pk)
+                queryset.update(
+                    SAccount_Last_Access_Date=datetime.datetime.now()
+                )
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
@@ -498,15 +489,17 @@ class SavingAccountViewSet(viewsets.ViewSet):
             'status': 'Success',
             'message': 'Update Check Account Successfully'}, status=status.HTTP_200_OK)
     
+    @transaction.atomic
     def destroy(self, request, pk=None):
         queryset = SavingAccount.objects.all()
         savingaccount = get_object_or_404(queryset, pk=pk)
         queryset = CustomerToSA.objects.all()
         customer_to_sa = get_list_or_404(queryset, SAccount_ID=pk)
         try:
-            for obj in customer_to_sa:
-                obj.delete()
-            savingaccount.delete()
+            with transaction.atomic():
+                for obj in customer_to_sa:
+                    obj.delete()
+                savingaccount.delete()
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
@@ -534,6 +527,7 @@ class LoanReleaseViewSet(viewsets.ViewSet):
         serializer = LoanReleaseSerializer(queryset, many=True)
         return Response(serializer.data)
     
+    @transaction.atomic
     def create(self, request):
         loan_id = request.data.get('Loan_ID')
         loan = Loan.objects.filter(pk=request.data.get('Loan_ID'))
@@ -558,24 +552,27 @@ class LoanReleaseViewSet(viewsets.ViewSet):
         newrequest = request.data.copy()
         newrequest['Loan_Release_Date'] = datetime.datetime.now()
         serializer = LoanReleaseSerializer(data=newrequest)
-
-        if serializer.is_valid():
-            LoanRelease.objects.create(**serializer.validated_data)
-            queryset = Loan.objects.filter(pk=request.data.get('Loan_ID'))
-            if float(loan_amount) + float(request.data.get('Loan_Release_Amount')) == float(loan.get().Loan_Total):
-                queryset.update(Loan_Status='2')
-            else:
-                queryset.update(Loan_Status='1')
-            
+        
+        try:
+            with transaction.atomic():
+                if serializer.is_valid():
+                    LoanRelease.objects.create(**serializer.validated_data)
+                    queryset = Loan.objects.filter(pk=request.data.get('Loan_ID'))
+                    if float(loan_amount) + float(request.data.get('Loan_Release_Amount')) == float(loan.get().Loan_Total):
+                        queryset.update(Loan_Status='2')
+                    else:
+                        queryset.update(Loan_Status='1')
+        except IntegrityError as e:       
             return Response({
-                'status': 'Success',
-                'message': 'Create new Loan Release Successfully'},
-                status=status.HTTP_201_CREATED)
+                'status': 'Bad request',
+                'message': 'Invalid data',
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({
-            'status': 'Bad request',
-            'message': 'Invalid data',
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'status': 'Success',
+            'message': 'Create new Loan Release Successfully'},
+            status=status.HTTP_201_CREATED)
+        
     
     def retrieve(self, request, pk=None):
         queryset = LoanRelease.objects.all()
@@ -589,6 +586,7 @@ class LoanReleaseViewSet(viewsets.ViewSet):
             'message': 'Loan Release is not allowed to modify',
         }, status=status.HTTP_400_BAD_REQUEST)
     
+    @transaction.atomic
     def destroy(self, request, pk=None):
         queryset = LoanRelease.objects.all()
         loan_release = get_object_or_404(queryset, pk=pk)
@@ -601,18 +599,19 @@ class LoanReleaseViewSet(viewsets.ViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            loan_release.delete()
-            queryset = LoanRelease.objects.filter(Loan_ID=loan)
-            if not queryset.exists():
-                queryset.update(Loan_Status='0')
-            else:
-                loan_amount = sum([q.Loan_Release_Amount for q in queryset])
-                if float(loan_amount) == float(loan.get().Loan_Total):
-                    queryset.update(Loan_Status='2')
-                elif float(loan_amount) == 0:
+            with transaction.atomic():
+                loan_release.delete()
+                queryset = LoanRelease.objects.filter(Loan_ID=loan)
+                if not queryset.exists():
                     queryset.update(Loan_Status='0')
                 else:
-                    queryset.update(Loan_Status='1')
+                    loan_amount = sum([q.Loan_Release_Amount for q in queryset])
+                    if float(loan_amount) == float(loan.get().Loan_Total):
+                        queryset.update(Loan_Status='2')
+                    elif float(loan_amount) == 0:
+                        queryset.update(Loan_Status='0')
+                    else:
+                        queryset.update(Loan_Status='1')
         except IntegrityError as e:
             return Response({
                 'status': 'Bad request',
@@ -637,7 +636,6 @@ class StatisticalDataViewSet(viewsets.ViewSet):
             saving_account_set = SavingAccount.objects.filter(SAccount_Open_Bank_Name=bank.Bank_Name)
             overall_balance = 0.00
             for sa in saving_account_set:
-                print(sa.SAccount_Open_Date)
                 time_list.append(sa.SAccount_Open_Date)
                 overall_balance += sa.SAccount_Balance
         start_time = min(time_list)
@@ -669,7 +667,7 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                             overall_loan += release.Loan_Release_Amount
                 tmp[str(year)] = [overall_balance, overall_loan, overall_customer]
             bank_year_data.append(tmp)
-        print(bank_year_data)
+        # print(bank_year_data)
 
         # Process quarter
         for bank in bank_set:
@@ -694,7 +692,7 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                                 overall_loan += release.Loan_Release_Amount
                     tmp[str(year) + "-Q" + str(quarter)] = [overall_balance, overall_loan, overall_customer]
             bank_quarter_data.append(tmp)
-        print(bank_quarter_data)
+        # print(bank_quarter_data)
 
         # Process month
         for bank in bank_set:
