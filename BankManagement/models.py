@@ -15,9 +15,9 @@ class Bank(models.Model):
 
 class CheckAccount(models.Model):
     CAccount_ID = models.CharField('CAccount_ID', primary_key=True, max_length=MAX_CHAR_LEN)
-    CAccount_Balance = models.FloatField('CAccount_Balance', default=0.0, blank=False)
+    CAccount_Balance = models.DecimalField('CAccount_Balance', max_digits=20, decimal_places=2, blank=False)
     CAccount_Open_Date = models.DateTimeField('CAccount_Open_Date', blank=False)
-    CAccount_Overdraft = models.FloatField('CAccount_Overdraft', blank=False)
+    CAccount_Overdraft = models.DecimalField('CAccount_Overdraft', max_digits=20, decimal_places=2, blank=False)
 
     CAccount_Open_Bank_Name = models.ForeignKey(Bank, on_delete=models.CASCADE)
 
@@ -85,7 +85,7 @@ class CustomerToCA(models.Model):
 
 class Loan(models.Model):
     Loan_ID = models.CharField('Loan_ID', max_length=MAX_CHAR_LEN, blank=False, primary_key=True)
-    Loan_Total = models.FloatField('Loan_Total', blank=False)
+    Loan_Total = models.DecimalField('Loan_Total', max_digits=20, decimal_places=2, blank=False)
     Loan_Status = models.CharField('Loan_Status', max_length=1, default='0')
     
     Bank_Name = models.ForeignKey(Bank, on_delete=models.CASCADE)
@@ -107,9 +107,9 @@ class CustomerToLoan(models.Model):
 
 class SavingAccount(models.Model):
     SAccount_ID = models.CharField('SAccount_ID', primary_key=True, max_length=MAX_CHAR_LEN)
-    SAccount_Balance = models.FloatField('SAccount_Balance', default=0.0, blank=False)
+    SAccount_Balance = models.DecimalField('SAccount_Balance', max_digits=20, decimal_places=2, blank=False)
     SAccount_Open_Date = models.DateTimeField('SAccount_Open_Date', blank=False)
-    SAccount_Interest_Rate = models.FloatField('SAccount_Interest_Rate', blank=False)
+    SAccount_Interest_Rate = models.DecimalField('SAccount_Interest_Rate', max_digits=20, decimal_places=2, blank=False)
     SAccount_Currency_Type = models.CharField('SAccount_Currency_Type', max_length=MAX_CHAR_LEN, blank=False)
 
     SAccount_Open_Bank_Name = models.ForeignKey(Bank, on_delete=models.CASCADE)
@@ -136,7 +136,7 @@ class CustomerToSA(models.Model):
 class LoanRelease(models.Model):
     Loan_Release_ID = models.CharField('Loan_Release_ID', max_length=MAX_CHAR_LEN, primary_key=True)
     Loan_Release_Date = models.DateTimeField('Loan_Release_Date', blank=False)
-    Loan_Release_Amount = models.FloatField('Loan_Release_Amount', blank=False)
+    Loan_Release_Amount = models.DecimalField('Loan_Release_Amount', max_digits=20, decimal_places=2, blank=False)
 
     Loan_ID = models.ForeignKey(Loan, on_delete=models.CASCADE)
 
