@@ -637,7 +637,7 @@ class StatisticalDataViewSet(viewsets.ViewSet):
             overall_balance = 0.00
             for sa in saving_account_set:
                 time_list.append(sa.SAccount_Open_Date)
-                overall_balance += sa.SAccount_Balance
+                overall_balance += float(sa.SAccount_Balance)
         start_time = min(time_list)
         now_time = datetime.datetime.now()
 
@@ -658,13 +658,13 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                 overall_customer = 0
                 for sa in saving_account_set:
                     if sa.SAccount_Open_Date.year <= year:
-                        overall_balance += sa.SAccount_Balance
+                        overall_balance += float(sa.SAccount_Balance)
                         overall_customer += 1
                 for ln in loan_set:
                     release_set = LoanRelease.objects.filter(Loan_ID=ln.Loan_ID)
                     for release in release_set:
                         if release.Loan_Release_Date.year <= year:
-                            overall_loan += release.Loan_Release_Amount
+                            overall_loan += float(release.Loan_Release_Amount)
                 tmp[str(year)] = [overall_balance, overall_loan, overall_customer]
             bank_year_data.append(tmp)
         # print(bank_year_data)
@@ -683,13 +683,13 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                     overall_customer = 0
                     for sa in saving_account_set:
                         if sa.SAccount_Open_Date.year <= year and quarter_range[quarter-1][0] <= sa.SAccount_Open_Date.month <= quarter_range [quarter-1][1]:
-                            overall_balance += sa.SAccount_Balance
+                            overall_balance += float(sa.SAccount_Balance)
                             overall_customer += 1
                     for ln in loan_set:
                         release_set = LoanRelease.objects.filter(Loan_ID=ln.Loan_ID)
                         for release in release_set:
                             if release.Loan_Release_Date.year <= year and quarter_range[quarter-1][0] <= release.Loan_Release_Date.month <= quarter_range [quarter-1][1]:
-                                overall_loan += release.Loan_Release_Amount
+                                overall_loan += float(release.Loan_Release_Amount)
                     tmp[str(year) + "-Q" + str(quarter)] = [overall_balance, overall_loan, overall_customer]
             bank_quarter_data.append(tmp)
         # print(bank_quarter_data)
@@ -708,13 +708,13 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                     overall_customer = 0
                     for sa in saving_account_set:
                         if sa.SAccount_Open_Date.year <= year and sa.SAccount_Open_Date.month == month:
-                            overall_balance += sa.SAccount_Balance
+                            overall_balance += float(sa.SAccount_Balance)
                             overall_customer += 1
                     for ln in loan_set:
                         release_set = LoanRelease.objects.filter(Loan_ID=ln.Loan_ID)
                         for release in release_set:
                             if release.Loan_Release_Date.year <= year and release.Loan_Release_Date.month == month:
-                                overall_loan += release.Loan_Release_Amount
+                                overall_loan += float(release.Loan_Release_Amount)
                     tmp[str(year) + "-M" + str(month)] = [overall_balance, overall_loan, overall_customer]
             bank_month_data.append(tmp)
         # print(bank_month_data)
