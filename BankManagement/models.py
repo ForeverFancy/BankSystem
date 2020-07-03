@@ -62,7 +62,7 @@ class Customer(models.Model):
     Contact_Person_Email = models.CharField('Contact_Person_Email', max_length=MAX_CHAR_LEN, blank=False)
     Contact_Person_Relationship = models.CharField('Contact_Person_Relationship', max_length=MAX_CHAR_LEN, blank=False)
 
-    Employee_ID = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    Employee_ID = models.ForeignKey(Employee, on_delete=models.CASCADE, blank=True, null=True)
 
     class Meta:
         db_table = 'Customer'
