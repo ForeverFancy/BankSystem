@@ -116,7 +116,7 @@ static
 
 模块结构图如下：
 
-![](imgs/model_arch_design.png)
+![](report.assets/model_arch_design.png)
 
 ### 系统工作流程
 
@@ -130,11 +130,11 @@ static
 
 数据库设计的 ER 图如下：
 
-![](imgs/cdm.png)
+![](report.assets/cdm.png)
 
 数据库设计的物理数据库结构图如下：
 
-![](imgs/pdm.png)
+![](report.assets/pdm.png)
 
 ## 详细设计
 
@@ -1109,7 +1109,7 @@ class StatisticalDataViewSet(viewsets.ViewSet):
             overall_balance = 0.00
             for sa in saving_account_set:
                 time_list.append(sa.SAccount_Open_Date)
-                overall_balance += sa.SAccount_Balance
+                overall_balance += float(sa.SAccount_Balance)
         start_time = min(time_list)
         now_time = datetime.datetime.now()
 
@@ -1130,13 +1130,13 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                 overall_customer = 0
                 for sa in saving_account_set:
                     if sa.SAccount_Open_Date.year <= year:
-                        overall_balance += sa.SAccount_Balance
+                        overall_balance += float(sa.SAccount_Balance)
                         overall_customer += 1
                 for ln in loan_set:
                     release_set = LoanRelease.objects.filter(Loan_ID=ln.Loan_ID)
                     for release in release_set:
                         if release.Loan_Release_Date.year <= year:
-                            overall_loan += release.Loan_Release_Amount
+                            overall_loan += float(release.Loan_Release_Amount)
                 tmp[str(year)] = [overall_balance, overall_loan, overall_customer]
             bank_year_data.append(tmp)
         # print(bank_year_data)
@@ -1155,13 +1155,13 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                     overall_customer = 0
                     for sa in saving_account_set:
                         if sa.SAccount_Open_Date.year <= year and quarter_range[quarter-1][0] <= sa.SAccount_Open_Date.month <= quarter_range [quarter-1][1]:
-                            overall_balance += sa.SAccount_Balance
+                            overall_balance += float(sa.SAccount_Balance)
                             overall_customer += 1
                     for ln in loan_set:
                         release_set = LoanRelease.objects.filter(Loan_ID=ln.Loan_ID)
                         for release in release_set:
                             if release.Loan_Release_Date.year <= year and quarter_range[quarter-1][0] <= release.Loan_Release_Date.month <= quarter_range [quarter-1][1]:
-                                overall_loan += release.Loan_Release_Amount
+                                overall_loan += float(release.Loan_Release_Amount)
                     tmp[str(year) + "-Q" + str(quarter)] = [overall_balance, overall_loan, overall_customer]
             bank_quarter_data.append(tmp)
         # print(bank_quarter_data)
@@ -1180,13 +1180,13 @@ class StatisticalDataViewSet(viewsets.ViewSet):
                     overall_customer = 0
                     for sa in saving_account_set:
                         if sa.SAccount_Open_Date.year <= year and sa.SAccount_Open_Date.month == month:
-                            overall_balance += sa.SAccount_Balance
+                            overall_balance += float(sa.SAccount_Balance)
                             overall_customer += 1
                     for ln in loan_set:
                         release_set = LoanRelease.objects.filter(Loan_ID=ln.Loan_ID)
                         for release in release_set:
                             if release.Loan_Release_Date.year <= year and release.Loan_Release_Date.month == month:
-                                overall_loan += release.Loan_Release_Amount
+                                overall_loan += float(release.Loan_Release_Amount)
                     tmp[str(year) + "-M" + str(month)] = [overall_balance, overall_loan, overall_customer]
             bank_month_data.append(tmp)
         # print(bank_month_data)
@@ -1201,16 +1201,72 @@ class StatisticalDataViewSet(viewsets.ViewSet):
 
 ### 前端
 
+前端通过新建一个 Django app 实现。
+
+由于前端的实现不是本次实验的重点，所以在这里只简要介绍一下设计思路：
+- 访问对应的 url 时，前端渲染对应模板，之后 JavaScript 会从对应的后端 url 中获取数据并填充；
+- 访问 `index.html` 会跳转到 `/dist/index.html`。每个 url 都对应一个 html 文件，静态文件存放在 `static` 文件夹下；
+- 对后端 url 的访问都使用 `ajax` 实现，数据展示使用 dataTables 实现，数据统计中的折线图使用 chart.js 实现；
+- 使用 `ajax` 得到数据之后，只需要按照 dataTables 和 chart.js 对应的格式就可以展示对应的数据；
+- 在统计过程中，只统计对应时间段内的数据总量（比如：第一季度存款量，一月客户数等）。
+
 ## 实现与测试
 
 ### 实现结果
 
-<!-- 给出各个功能需求的实现界面和运行结果。 -->
+![image-20200703221224953](report.assets/image-20200703221224953.png)
+
+<center>主页</center>
+
+![image-20200703221318451](report.assets/image-20200703221318451.png)
+
+<center>Banks</center>
+
+![image-20200703221359307](report.assets/image-20200703221359307.png)
+
+<center>Customers</center>
+
+![image-20200703221427356](report.assets/image-20200703221427356.png)
+
+<center>Check Accounts</center>
+
+![image-20200703221616343](report.assets/image-20200703221616343.png)
+
+<center>Saving Accounts</center>
+
+![image-20200703221648230](report.assets/image-20200703221648230.png)
+
+<center>Loans</center>
+
+![image-20200703221759889](report.assets/image-20200703221759889.png)
+
+<center>Departments</center>
+
+![image-20200703221824814](report.assets/image-20200703221824814.png)
+
+<center>Employees</center>
+
+![image-20200703222957524](report.assets/image-20200703222957524.png)
+
+<center>Statistical Tables</center>
+
+![image-20200703222651780](report.assets/image-20200703222651780.png)
+
+<center>Statistical Charts</center>
 
 ### 测试结果
 
-<!-- 给出各个功能需求的测试用例和测试结果。 -->
+测试用例均已在测试时插入对应的表中，可以参考上面的截图。
 
 ## 总结与讨论
 
-<!-- 总结本系统开发过程中的主要收获、教训。 -->
+收获：
+- 在本系统开发过程中体验了一次相对比较完整的前后端分离的 web 应用开发过程；
+- 学习了 Django + REST Framework 等目前流行的后端开发思路和开发框架；
+- 学习了基于 Bootstrap 模板 + JavaScript 的前端开发过程；
+- 根据需求从头开始设计数据库，对数据库的设计过程，以及一致性、完整性等重要性质有了更深刻的理解。
+
+不足之处：
+- 前端没有使用目前比较流行的 Vue 等架构实现；
+- 前端的部分代码可扩展性比较差，后续使用 Django 的模板循环实现会有更好的拓展性；
+- 后端对一个账户对应多个账户的支持不够，前端默认只提供一对一的输入，手动构造 POST 的方法虽然可行，但使用体验略有下降。
