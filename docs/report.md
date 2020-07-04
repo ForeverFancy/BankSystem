@@ -28,7 +28,7 @@
 
 系统可以分为前端和后端两大模块：
 - 后端使用 Django REST Framework，获取和新建数据资源通过 GET, POST 方法访问 `/api/{table_name}/` 实现，修改和删除等操作通过 PUT, DELETE 方法访问 `/api/{table_name}/{primary_key}/` 实现；
-- 前端基于开源的 bootstrap 模板实现。通过 JavaScript 访问后端对应的 URL 获取数据资源并渲染，同时将新建、修改和删除的数据通过访问对应的 URL 实现。业务统计功能在获取数据之后，分别用 dataTables 和 chart.js 实现。
+- 前端基于开源的 bootstrap 模板实现（见参考文献）。通过 JavaScript 访问后端对应的 URL 获取数据资源并渲染，同时将新建、修改和删除的数据通过访问对应的 URL 实现。业务统计功能在获取数据之后，分别用 dataTables 和 chart.js 实现。
 
 #### 后端
 
@@ -1270,3 +1270,7 @@ class StatisticalDataViewSet(viewsets.ViewSet):
 - 前端没有使用目前比较流行的 Vue 等架构实现；
 - 前端的部分代码可扩展性比较差，后续使用 Django 的模板循环实现会有更好的拓展性；
 - 后端对一个账户对应多个账户的支持不够，前端默认只提供一对一的输入，手动构造 POST 的方法虽然可行，但使用体验略有下降。
+
+## 参考文献
+
+[1. bootstrap 模板](https://startbootstrap.com/templates/sb-admin/)
